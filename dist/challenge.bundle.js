@@ -234,7 +234,7 @@ Object.defineProperty(exports, "__esModule", {
 var config = {
   author: "Andreas Wolf",
   title: "Bezier Abstraction",
-  instructions: "After an Image gets uploaded, a triangulation this will be used as a Background. Another triangulation is performet with slightly different parameters, these Triangles will be used to create a Web of Lines. The Algorithm which generates these Lines is the same to generate B&eacute;zier-Curves"
+  instructions: "After an Image gets uploaded, a triangulation this will be used as a Background. Another triangulation is performet with slightly different parameters, these Triangles will be used to create a Web of Lines. The Algorithm which generates these Lines is the same to generate Bezier-Curves"
 };
 
 exports.default = config;
@@ -395,9 +395,9 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _triangulateImage = __webpack_require__(6);
+var _triangulateImageBrowserEs6Min = __webpack_require__(6);
 
-var _triangulateImage2 = _interopRequireDefault(_triangulateImage);
+var _triangulateImageBrowserEs6Min2 = _interopRequireDefault(_triangulateImageBrowserEs6Min);
 
 var _victor = __webpack_require__(8);
 
@@ -429,28 +429,21 @@ var NailsAndStringDrawer = function () {
       var params = {
         blur: Number(this.blur.value),
         accuracy: Number(this.accuracy.value),
-        threshold: Number(this.threshold.value),
         vertexCount: Number(this.vertexCount.value)
       };
 
       // Draw boring Triangulation
-      var triangulatedImage = (0, _triangulateImage2.default)(params).fromImage(this.srcImage);
+      var triangulatedImage = (0, _triangulateImageBrowserEs6Min2.default)(params).fromImage(this.srcImage);
       triangulatedImage.toSVG().then(function (data) {
         _this.svg.innerHTML = data;
 
-        params = {
-          blur: params.blur,
-          accuracy: params.accuracy + Number(_this.lineDeviation.value),
-          threshold: params.threshold,
-          vertexCount: params.vertexCount
-        };
-
         // Cool Bézier Line calculations with slightly changed Triangulation Options
-        triangulatedImage = (0, _triangulateImage2.default)(params).fromImage(_this.srcImage);
-        triangulatedImage.toData().then(function (dataDeviated) {
+        params.accuracy = params.accuracy + Number(_this.lineDeviation.value);
+        triangulatedImage = (0, _triangulateImageBrowserEs6Min2.default)(params).fromImage(_this.srcImage);
+        triangulatedImage.toData().then(function (triangulationData) {
           var _ref;
 
-          var lines = dataDeviated.map(function (triangle) {
+          var lines = triangulationData.map(function (triangle) {
             return _this.generateLines(triangle);
           });
           lines = (_ref = []).concat.apply(_ref, _toConsumableArray(lines));
@@ -459,6 +452,24 @@ var NailsAndStringDrawer = function () {
             return _this.svg.appendChild(svgLine);
           });
         });
+
+        // Draw a second layer of Lines if choosen
+        if (_this.doubleLines.checked) {
+          params.accuracy = params.accuracy - 2 * Number(_this.lineDeviation.value);
+          triangulatedImage = (0, _triangulateImageBrowserEs6Min2.default)(params).fromImage(_this.srcImage);
+          triangulatedImage.toData().then(function (triangulationData) {
+            var _ref2;
+
+            var lines = triangulationData.map(function (triangle) {
+              return _this.generateLines(triangle);
+            });
+            lines = (_ref2 = []).concat.apply(_ref2, _toConsumableArray(lines));
+            var svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
+            svgLines.map(function (svgLine) {
+              return _this.svg.appendChild(svgLine);
+            });
+          });
+        }
       });
     }
   }, {
@@ -538,23 +549,6 @@ var NailsAndStringDrawer = function () {
       myMenu.appendChild(element);
 
       element = document.createElement('label');
-      element.setAttribute('for', 'threshold');
-      element.innerText = 'Threshold:';
-      myMenu.appendChild(element);
-      element = document.createElement('input');
-      element.setAttribute('type', 'range');
-      element.setAttribute('name', 'threshold');
-      element.setAttribute('min', '0');
-      element.setAttribute('max', '100');
-      element.setAttribute('value', '50');
-      element.setAttribute('step', '1');
-      element.addEventListener('change', function () {
-        return _this2.draw();
-      });
-      this.threshold = element;
-      myMenu.appendChild(element);
-
-      element = document.createElement('label');
       element.setAttribute('for', 'vertexCount');
       element.innerText = 'Vertex Count:';
       myMenu.appendChild(element);
@@ -572,13 +566,12 @@ var NailsAndStringDrawer = function () {
       element = document.createElement('hr');
       myMenu.appendChild(element);
 
-      // File Input
       element = document.createElement('h4');
       element.innerText = 'Line Options';
       myMenu.appendChild(element);
       element = document.createElement('label');
       element.setAttribute('for', 'lineDeviation');
-      element.innerText = 'Line to Triangle deviation:';
+      element.innerText = 'Deviation:';
       myMenu.appendChild(element);
       element = document.createElement('input');
       element.setAttribute('type', 'range');
@@ -591,6 +584,19 @@ var NailsAndStringDrawer = function () {
         return _this2.draw();
       });
       this.lineDeviation = element;
+      myMenu.appendChild(element);
+
+      element = document.createElement('label');
+      element.setAttribute('for', 'doubleLines');
+      element.innerText = '2xLines:';
+      myMenu.appendChild(element);
+      element = document.createElement('input');
+      element.setAttribute('type', 'checkbox');
+      element.setAttribute('name', 'doubleLines');
+      element.addEventListener('change', function () {
+        return _this2.draw();
+      });
+      this.doubleLines = element;
       myMenu.appendChild(element);
       element = document.createElement('br');
       myMenu.appendChild(element);
@@ -647,1746 +653,528 @@ exports.default = NailsAndStringDrawer;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-/* WEBPACK VAR INJECTION */(function(global) {(function (global, factory) {
-	 true ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.triangulate = factory());
-}(this, (function () { 'use strict';
-
-var clamp = function ( value, min, max ) {
-	return value < min ? min : value > max ? max : value;
-};
-
-var clone = function (obj) {
-	var result = false;
-	
-	if ( typeof obj !== 'undefined' ) {
-		try {
-			result = JSON.parse( JSON.stringify( obj ) );
-		} catch ( e ) { }
-	}
-	
-	return result;
-};
-
-var Canvas$1 = function Canvas ( width, height ) {
-	if ( width === void 0 ) width = 300;
-	if ( height === void 0 ) height = 150;
-
-	if ( typeof window === 'undefined' ) {
-		this.canvasEl = { width: width, height: height };
-		this.ctx = null;
-	} else {
-		this.canvasEl = document.createElement( 'canvas' );
-		this.canvasEl.width = width;
-		this.canvasEl.height = height;
-		this.ctx = this.canvasEl.getContext( '2d' );
-	} 
-};
-
-var prototypeAccessors = { width: { configurable: true },height: { configurable: true } };
-
-Canvas$1.prototype.getContext = function getContext () {
-	return this.ctx;
-};
-
-Canvas$1.prototype.toDataURL = function toDataURL ( type, encoderOptions, cb ) {
-	if ( typeof cb === 'function' ) {
-		cb( this.canvasEl.toDataURL( type, encoderOptions ) );
-	} else {
-		return this.canvasEl.toDataURL( type, encoderOptions );
-	}
-};
-	
-prototypeAccessors.width.get = function () {
-	return this.canvasEl.width;
-};
-	
-prototypeAccessors.width.set = function ( newWidth ) {
-	this.canvasEl.width = newWidth;
-};
-
-prototypeAccessors.height.get = function () {
-	return this.canvasEl.height;
-};
-
-prototypeAccessors.height.set = function ( newHeight ) {
-	this.canvasEl.height = newHeight;
-};
-
-Object.defineProperties( Canvas$1.prototype, prototypeAccessors );
-
-if ( typeof window !== 'undefined' ) {
-	Canvas$1.Image = Image;
-}
-
-// import Canvas from 'canvas';
-// import Canvas from './browser.js';
-
-var makeCanvasAndContext = function ( size, options, dpr, format ) {
-	var backgroundColor = options && options.backgroundColor ? options.backgroundColor : false;
-	var canvas = new Canvas$1( size.width * dpr, size.height * dpr, format );
-	var ctx = canvas.getContext( '2d' );
-
-	if ( backgroundColor ) {
-		ctx.fillStyle = backgroundColor;
-		ctx.fillRect( 0, 0, size.width * dpr, size.height * dpr );
-		ctx.fillStyle = 'transparent';
-	}
-
-	return {
-		canvas: canvas,
-		ctx: ctx
-	};
-};
-
-/**
- * Transform CSS color definition to RGBA
- * @param  {String} color CSS color (name,HSL,RGB,HEX..)
- * @return {Object}       RGBA color object
- */
-var toColor = function (color) {
-	var size = 1;		// single pixel
-	var ctx = makeCanvasAndContext( { width: size, height: size }, { }, 1, true ).ctx;
-	ctx.fillStyle = color;
-	ctx.fillRect( 0, 0, size, size );
-	
-	// Read the pixel, and get RGBA values
-	var data = ctx.getImageData( 0, 0, size, size ).data;
-	
-	return {
-		r: data[0],
-		g: data[1],
-		b: data[2],
-		a: data[3] / 255		// For alpha we scale to 0..1 float
-	};
-};
-
-var defaultParams = {
-	accuracy: 0.7,
-	blur: 4,
-	fill: true,
-	stroke: true,
-	strokeWidth: 0.5,
-	lineJoin: 'miter',
-	vertexCount: 700,
-	threshold: 50,
-	transparentColor: false
-};
-
-var allowedLineJoins = [ 'miter', 'round', 'bevel' ];
-
-var sanitizeInput = function (params) {
-	
-	params = clone( params );
-
-	if ( typeof params !== 'object' ) {
-		params = { };
-	}
-
-	if ( typeof params.accuracy !== 'number' || isNaN( params.accuracy ) ) {
-		params.accuracy = defaultParams.accuracy;
-	} else {
-		params.accuracy = clamp( params.accuracy, 0, 1 );
-	}
-
-	if ( typeof params.blur !== 'number' || isNaN( params.blur ) ) {
-		params.blur = defaultParams.blur;	
-	}
-
-	if ( params.blur <= 0 ) {
-		params.blur = 1;
-	}
-
-	if ( typeof params.fill !== 'string' && typeof params.fill !== 'boolean' ) {
-		params.fill = defaultParams.fill;
-	}
-
-	if ( typeof params.stroke !== 'string' && typeof params.stroke !== 'boolean' ) {
-		params.stroke = defaultParams.stroke;
-	}
-
-	if ( typeof params.strokeWidth !== 'number' || isNaN( params.strokeWidth ) ) {
-		params.strokeWidth = defaultParams.strokeWidth;
-	}
-
-	if ( typeof params.threshold !== 'number' || isNaN( params.threshold ) ) {
-		params.threshold = defaultParams.threshold;
-	} else {
-		params.threshold = clamp( params.threshold, 1, 100 );
-	}
-
-	if ( typeof params.lineJoin !== 'string' || allowedLineJoins.indexOf( params.lineJoin ) === -1 ) {
-		params.lineJoin = defaultParams.lineJoin;
-	}
-
-	if ( params.gradients && params.fill ) {
-		params.gradients = true;
-	} else {
-		params.gradients = false;
-	}
-
-	if ( params.gradients ) {
-		if (
-			typeof params.gradientStops !== 'number' ||
-			isNaN( params.gradientStops ) ||
-			params.gradientStops < 2
-		) {
-			params.gradientStops = 2;
-		}
-
-		params.gradientStops = Math.round( params.gradientStops );
-	}
-
-	if ( typeof params.vertexCount !== 'number' || isNaN( params.vertexCount ) ) {
-		params.vertexCount = defaultParams.vertexCount;
-	}
-
-	if ( params.vertexCount <= 0 ) {
-		params.vertexCount = 1;
-	}
-
-	if ( typeof params.transparentColor !== 'string' && typeof params.transparentColor !== 'boolean' ) {
-		params.transparentColor = defaultParams.transparentColor;
-	}
-
-	// "transparentColor=true" is meaningless
-	if ( typeof params.transparentColor === true ) {
-		params.transparentColor = false;
-	}
-
-	// Transform `transparentColor` string to RGBA color object
-	if ( typeof params.transparentColor === 'string' ) {
-		params.transparentColor = toColor( params.transparentColor );
-	}
-
-	return params;
-};
-
-var fromImageToImageData = function (image) {
-	if ( image instanceof HTMLImageElement ) {
-		// http://stackoverflow.com/a/3016076/229189
-		if ( ! image.naturalWidth || ! image.naturalHeight || image.complete === false ) {
-			throw new Error( "This this image hasn't finished loading: " + image.src );
-		}
-
-		var canvas = new Canvas$1( image.naturalWidth, image.naturalHeight );
-		var ctx = canvas.getContext( '2d' );
-		
-		ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
-
-		var imageData = ctx.getImageData( 0, 0, canvas.width, canvas.height );
-
-		if ( imageData.data && imageData.data.length ) {
-			if ( typeof imageData.width === 'undefined' ) {
-				imageData.width = image.naturalWidth;
-			}
-
-			if ( typeof imageData.height === 'undefined' ) {
-				imageData.height = image.naturalHeight;
-			}
-		}
-		
-		return imageData;
-	} else {
-		throw new Error( 'This object does not seem to be an image.' );
-		return;
-	}
-};
-
-// import objectAssign from 'object-assign'
-var objectAssign = Object.assign;
-
-/**
- * Transform color object to rgb/a
- * @param  {Object} colorObj RGB(A) color object
- * @return {String}       	 rgba css string
- */
-
-var toRGBA = function (colorObj) {
-	var c = objectAssign( { a: 1 }, colorObj );	// rgb-to-rgba:  alpha is optionally set to 1
-	return ("rgba(" + (c.r) + ", " + (c.g) + ", " + (c.b) + ", " + (c.a) + ")")
-};
-
-var drawPolygonsOnContext = function ( ctx, polygons, size, dpr ) {
-	dpr = dpr || 1;
-
-	polygons.forEach( function ( polygon, index ) {
-		ctx.beginPath();
-		ctx.moveTo( polygon.a.x * dpr, polygon.a.y * dpr );
-		ctx.lineTo( polygon.b.x * dpr, polygon.b.y * dpr );
-		ctx.lineTo( polygon.c.x * dpr, polygon.c.y * dpr );
-		ctx.lineTo( polygon.a.x * dpr, polygon.a.y * dpr );
-		
-		// http://weblogs.asp.net/dwahlin/rendering-linear-gradients-using-the-html5-canvas
-		if ( polygon.gradient ) {
-			var gradient = ctx.createLinearGradient(
-				polygon.gradient.x1 * dpr,
-				polygon.gradient.y1 * dpr,
-				polygon.gradient.x2 * dpr,
-				polygon.gradient.y2 * dpr
-			);
-
-			var lastColorIndex = polygon.gradient.colors.length - 1;
-			
-			polygon.gradient.colors.forEach( function ( color, index ) {
-				var rgb = toRGBA( color );
-				gradient.addColorStop( index / lastColorIndex, rgb );
-			} );
-
-			ctx.fillStyle = gradient;
-			ctx.fill();
-
-			if ( polygon.strokeWidth > 0 ) {
-				ctx.strokeStyle = gradient;
-				ctx.lineWidth = polygon.strokeWidth * dpr;
-				ctx.lineJoin = polygon.lineJoin;
-				ctx.stroke();
-			}
-		} else {
-			if ( polygon.fill ) {
-				ctx.fillStyle = polygon.fill;
-				ctx.fill();
-			}
-
-			if ( polygon.strokeColor ) {
-				ctx.strokeStyle = polygon.strokeColor;
-				ctx.lineWidth = polygon.strokeWidth * dpr;
-				ctx.lineJoin = polygon.lineJoin;
-				ctx.stroke();
-			}
-		}
-
-		ctx.closePath();
-	} );
-
-	return ctx;
-};
-
-var polygonsToImageData = function ( polygons, size, options ) {
-	var dpr = options && options.dpr ? options.dpr : 1;	
-	var ctx = makeCanvasAndContext( size, options, dpr, true ).ctx;
-	
-	drawPolygonsOnContext( ctx, polygons, size, dpr );
-
-	return ctx.getImageData( 0, 0, size.width * dpr, size.height * dpr );
-};
-
-var polygonsToDataURL = function ( polygons, size, options ) {
-	var dpr = options && options.dpr ? options.dpr : 1;	
-	var canvasData = makeCanvasAndContext( size, options, dpr );
-
-	drawPolygonsOnContext( canvasData.ctx, polygons, size, dpr );
-
-	return canvasData.canvas.toDataURL();
-};
-
-// http://stackoverflow.com/questions/6918597/convert-canvas-or-control-points-to-svg
-// https://developer.mozilla.org/en-US/docs/SVG/Element/polygon
-var polygonsToSVG = function ( polygons, size ) {
-	var defStr = '';
-
-	if ( polygons.length && polygons[0].gradient ) {
-		defStr = '<defs>';
-	}
-
-	var polygonStr = '';
-
-	polygons.forEach( function ( polygon, index ) {
-		var a = polygon.a;
-		var b = polygon.b;
-		var c = polygon.c;
-
-		polygonStr += "<polygon points=\"" + (a.x) + "," + (a.y) + " " + (b.x) + "," + (b.y) + " " + (c.x) + "," + (c.y) + "\"";
-
-		if ( polygon.gradient ) {
-			var bb = polygon.boundingBox;
-			var x1 = ( ( polygon.gradient.x1 - bb.x ) / bb.width * 100 ).toFixed( 3 );
-			var y1 = ( ( polygon.gradient.y1 - bb.y ) / bb.height * 100 ).toFixed( 3 );
-			var x2 = ( ( polygon.gradient.x2 - bb.x ) / bb.width * 100 ).toFixed( 3 );
-			var y2 = ( ( polygon.gradient.y2 - bb.y ) / bb.height * 100 ).toFixed( 3 );
-
-			defStr += "\n\t<linearGradient id=\"gradient-" + index + "\" x1=\"" + x1 + "%\" y1=\"" + y1 + "%\" x2=\"" + x2 + "%\" y2=\"" + y2 + "%\">";
-
-			var lastColorIndex = polygon.gradient.colors.length - 1;
-			
-			polygon.gradient.colors.forEach( function ( color, index ) {
-				var rgb = toRGBA( color );
-				var offset = ( ( index / lastColorIndex ) * 100 ).toFixed( 3 );
-				defStr += "\n\t\t\t\t\t<stop offset=\"" + offset + "%\" stop-color=\"" + rgb + "\"/>\n\t\t\t\t";
-			} );
-	
-			defStr += "</linearGradient>";
-			polygonStr += " fill=\"url(#gradient-" + index + ")\"";
-
-			if ( polygon.strokeWidth > 0 ) {
-				polygonStr += " stroke=\"url(#gradient-" + index + ")\" stroke-width=\"" + (polygon.strokeWidth) + "\" stroke-linejoin=\"" + (polygon.lineJoin) + "\"";
-			}
-
-		} else {
-			if ( polygon.fill ) {
-				polygonStr += " fill=\"" + (polygon.fill) + "\"";
-			} else {
-				polygonStr += " fill=\"transparent\"";
-			}
-
-			if ( polygon.strokeColor ) {
-				polygonStr += " stroke=\"" + (polygon.strokeColor) + "\" stroke-width=\"" + (polygon.strokeWidth) + "\" stroke-linejoin=\"" + (polygon.lineJoin) + "\"";
-			}
-		}
-
-
-		polygonStr += "/>\n\t";
-	} );
-
-	if ( defStr.length ) {
-		defStr += "\n\t\t</defs>";
-	}
-
-	var svg = "<?xml version=\"1.0\" standalone=\"yes\"?>\n<svg width=\"" + (size.width) + "\" height=\"" + (size.height) + "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" >\n\t" + defStr + "\n\t" + polygonStr + "\n</svg>";
-
-	return svg;
-};
-
-var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
-
-
-
-
-function createCommonjsModule(fn, module) {
-	return module = { exports: {} }, fn(module, module.exports), module.exports;
-}
-
-var delaunay = createCommonjsModule(function (module) {
-function Triangle(a, b, c) {
-  this.a = a;
-  this.b = b;
-  this.c = c;
-
-  var A = b.x - a.x,
-      B = b.y - a.y,
-      C = c.x - a.x,
-      D = c.y - a.y,
-      E = A * (a.x + b.x) + B * (a.y + b.y),
-      F = C * (a.x + c.x) + D * (a.y + c.y),
-      G = 2 * (A * (c.y - b.y) - B * (c.x - b.x)),
-      minx, miny, dx, dy;
-
-  /* If the points of the triangle are collinear, then just find the
-   * extremes and use the midpoint as the center of the circumcircle. */
-  if(Math.abs(G) < 0.000001) {
-    minx = Math.min(a.x, b.x, c.x);
-    miny = Math.min(a.y, b.y, c.y);
-    dx   = (Math.max(a.x, b.x, c.x) - minx) * 0.5;
-    dy   = (Math.max(a.y, b.y, c.y) - miny) * 0.5;
-
-    this.x = minx + dx;
-    this.y = miny + dy;
-    this.r = dx * dx + dy * dy;
-  }
-
-  else {
-    this.x = (D*E - B*F) / G;
-    this.y = (A*F - C*E) / G;
-    dx = this.x - a.x;
-    dy = this.y - a.y;
-    this.r = dx * dx + dy * dy;
-  }
-}
-
-Triangle.prototype.draw = function(ctx) {
-  ctx.beginPath();
-  ctx.moveTo(this.a.x, this.a.y);
-  ctx.lineTo(this.b.x, this.b.y);
-  ctx.lineTo(this.c.x, this.c.y);
-  ctx.closePath();
-  ctx.stroke();
-};
-
-function byX(a, b) {
-  return b.x - a.x
-}
-
-function dedup(edges) {
-  var j = edges.length,
-      a, b, i, m, n;
-
-  outer: while(j) {
-    b = edges[--j];
-    a = edges[--j];
-    i = j;
-    while(i) {
-      n = edges[--i];
-      m = edges[--i];
-      if((a === m && b === n) || (a === n && b === m)) {
-        edges.splice(j, 2);
-        edges.splice(i, 2);
-        j -= 2;
-        continue outer
-      }
-    }
-  }
-}
-
-function triangulate(vertices) {
-  /* Bail if there aren't enough vertices to form any triangles. */
-  if(vertices.length < 3)
-    { return [] }
-
-  /* Ensure the vertex array is in order of descending X coordinate
-   * (which is needed to ensure a subquadratic runtime), and then find
-   * the bounding box around the points. */
-  vertices.sort(byX);
-
-  var i    = vertices.length - 1,
-      xmin = vertices[i].x,
-      xmax = vertices[0].x,
-      ymin = vertices[i].y,
-      ymax = ymin;
-
-  while(i--) {
-    if(vertices[i].y < ymin) { ymin = vertices[i].y; }
-    if(vertices[i].y > ymax) { ymax = vertices[i].y; }
-  }
-
-  /* Find a supertriangle, which is a triangle that surrounds all the
-   * vertices. This is used like something of a sentinel value to remove
-   * cases in the main algorithm, and is removed before we return any
-   * results.
-   *
-   * Once found, put it in the "open" list. (The "open" list is for
-   * triangles who may still need to be considered; the "closed" list is
-   * for triangles which do not.) */
-  var dx     = xmax - xmin,
-      dy     = ymax - ymin,
-      dmax   = (dx > dy) ? dx : dy,
-      xmid   = (xmax + xmin) * 0.5,
-      ymid   = (ymax + ymin) * 0.5,
-      open   = [
-        new Triangle(
-          {x: xmid - 20 * dmax, y: ymid -      dmax, __sentinel: true},
-          {x: xmid            , y: ymid + 20 * dmax, __sentinel: true},
-          {x: xmid + 20 * dmax, y: ymid -      dmax, __sentinel: true}
-        )
-      ],
-      closed = [],
-      edges = [],
-      j, a, b;
-
-  /* Incrementally add each vertex to the mesh. */
-  i = vertices.length;
-  while(i--) {
-    /* For each open triangle, check to see if the current point is
-     * inside it's circumcircle. If it is, remove the triangle and add
-     * it's edges to an edge list. */
-    edges.length = 0;
-    j = open.length;
-    while(j--) {
-      /* If this point is to the right of this triangle's circumcircle,
-       * then this triangle should never get checked again. Remove it
-       * from the open list, add it to the closed list, and skip. */
-      dx = vertices[i].x - open[j].x;
-      if(dx > 0 && dx * dx > open[j].r) {
-        closed.push(open[j]);
-        open.splice(j, 1);
-        continue
-      }
-
-      /* If not, skip this triangle. */
-      dy = vertices[i].y - open[j].y;
-      if(dx * dx + dy * dy > open[j].r)
-        { continue }
-
-      /* Remove the triangle and add it's edges to the edge list. */
-      edges.push(
-        open[j].a, open[j].b,
-        open[j].b, open[j].c,
-        open[j].c, open[j].a
-      );
-      open.splice(j, 1);
-    }
-
-    /* Remove any doubled edges. */
-    dedup(edges);
-
-    /* Add a new triangle for each edge. */
-    j = edges.length;
-    while(j) {
-      b = edges[--j];
-      a = edges[--j];
-      open.push(new Triangle(a, b, vertices[i]));
-    }
-  }
-
-  /* Copy any remaining open triangles to the closed list, and then
-   * remove any triangles that share a vertex with the supertriangle. */
-  Array.prototype.push.apply(closed, open);
-
-  i = closed.length;
-  while(i--)
-    { if(closed[i].a.__sentinel ||
-       closed[i].b.__sentinel ||
-       closed[i].c.__sentinel)
-      { closed.splice(i, 1); } }
-
-  /* Yay, we're done! */
-  return closed
-}
-
-{
-    module.exports = {
-        Triangle: Triangle,
-        triangulate: triangulate
-    };
-}
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 
-var delaunay_2 = delaunay.triangulate;
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var sobel = createCommonjsModule(function (module, exports) {
-(function(root) {
-  'use strict';
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-  function Sobel(imageData) {
-    if (!(this instanceof Sobel)) {
-      return new Sobel(imageData);
-    }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-    var width = imageData.width;
-    var height = imageData.height;
+function createCommonjsModule(t, e) {
+  return e = { exports: {} }, t(e, e.exports), e.exports;
+}function copyImageDataWithCanvas(t) {
+  var e = new Canvas$1(t.width, t.height).getContext("2d");return e.putImageData(t, 0, 0), e.getImageData(0, 0, t.width, t.height);
+}function BlurStack() {
+  this.r = 0, this.g = 0, this.b = 0, this.a = 0, this.next = null;
+}function addVertex(t, e, a) {
+  var n = t + "|" + e;a[n] || (a[n] = { x: t, y: e }), n = null;
+}var clamp = function clamp(t, e, a) {
+  return t < e ? e : t > a ? a : t;
+},
+    clone = function clone(t) {
+  var e = !1;if (void 0 !== t) try {
+    e = JSON.parse(JSON.stringify(t));
+  } catch (t) {}return e;
+};
+var Canvas$1 = function () {
+  function Canvas$1() {
+    var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 300;
+    var e = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 150;
 
-    var kernelX = [
-      [-1,0,1],
-      [-2,0,2],
-      [-1,0,1]
-    ];
+    _classCallCheck(this, Canvas$1);
 
-    var kernelY = [
-      [-1,-2,-1],
-      [0,0,0],
-      [1,2,1]
-    ];
-
-    var sobelData = [];
-    var grayscaleData = [];
-
-    function bindPixelAt(data) {
-      return function(x, y, i) {
-        i = i || 0;
-        return data[((width * y) + x) * 4 + i];
-      };
-    }
-
-    var data = imageData.data;
-    var pixelAt = bindPixelAt(data);
-    var x, y;
-
-    for (y = 0; y < height; y++) {
-      for (x = 0; x < width; x++) {
-        var r = pixelAt(x, y, 0);
-        var g = pixelAt(x, y, 1);
-        var b = pixelAt(x, y, 2);
-
-        var avg = (r + g + b) / 3;
-        grayscaleData.push(avg, avg, avg, 255);
-      }
-    }
-
-    pixelAt = bindPixelAt(grayscaleData);
-
-    for (y = 0; y < height; y++) {
-      for (x = 0; x < width; x++) {
-        var pixelX = (
-            (kernelX[0][0] * pixelAt(x - 1, y - 1)) +
-            (kernelX[0][1] * pixelAt(x, y - 1)) +
-            (kernelX[0][2] * pixelAt(x + 1, y - 1)) +
-            (kernelX[1][0] * pixelAt(x - 1, y)) +
-            (kernelX[1][1] * pixelAt(x, y)) +
-            (kernelX[1][2] * pixelAt(x + 1, y)) +
-            (kernelX[2][0] * pixelAt(x - 1, y + 1)) +
-            (kernelX[2][1] * pixelAt(x, y + 1)) +
-            (kernelX[2][2] * pixelAt(x + 1, y + 1))
-        );
-
-        var pixelY = (
-          (kernelY[0][0] * pixelAt(x - 1, y - 1)) +
-          (kernelY[0][1] * pixelAt(x, y - 1)) +
-          (kernelY[0][2] * pixelAt(x + 1, y - 1)) +
-          (kernelY[1][0] * pixelAt(x - 1, y)) +
-          (kernelY[1][1] * pixelAt(x, y)) +
-          (kernelY[1][2] * pixelAt(x + 1, y)) +
-          (kernelY[2][0] * pixelAt(x - 1, y + 1)) +
-          (kernelY[2][1] * pixelAt(x, y + 1)) +
-          (kernelY[2][2] * pixelAt(x + 1, y + 1))
-        );
-
-        var magnitude = Math.sqrt((pixelX * pixelX) + (pixelY * pixelY))>>>0;
-
-        sobelData.push(magnitude, magnitude, magnitude, 255);
-      }
-    }
-
-    var clampedArray = sobelData;
-
-    if (typeof Uint8ClampedArray === 'function') {
-      clampedArray = new Uint8ClampedArray(sobelData);
-    }
-
-    clampedArray.toImageData = function() {
-      return Sobel.toImageData(clampedArray, width, height);
-    };
-
-    return clampedArray;
+    "undefined" == typeof window ? (this.canvasEl = { width: t, height: e }, this.ctx = null) : (this.canvasEl = document.createElement("canvas"), this.canvasEl.width = t, this.canvasEl.height = e, this.ctx = this.canvasEl.getContext("2d"));
   }
 
-  Sobel.toImageData = function toImageData(data, width, height) {
-    if (typeof ImageData === 'function' && Object.prototype.toString.call(data) === '[object Uint16Array]') {
-      return new ImageData(data, width, height);
-    } else {
-      if (typeof window === 'object' && typeof window.document === 'object') {
-        var canvas = document.createElement('canvas');
+  _createClass(Canvas$1, [{
+    key: "getContext",
+    value: function getContext() {
+      return this.ctx;
+    }
+  }, {
+    key: "toDataURL",
+    value: function toDataURL(t, e, a) {
+      if ("function" != typeof a) return this.canvasEl.toDataURL(t, e);a(this.canvasEl.toDataURL(t, e));
+    }
+  }, {
+    key: "width",
+    get: function get() {
+      return this.canvasEl.width;
+    },
+    set: function set(t) {
+      this.canvasEl.width = t;
+    }
+  }, {
+    key: "height",
+    get: function get() {
+      return this.canvasEl.height;
+    },
+    set: function set(t) {
+      this.canvasEl.height = t;
+    }
+  }]);
 
-        if (typeof canvas.getContext === 'function') {
-          var context = canvas.getContext('2d');
-          var imageData = context.createImageData(width, height);
-          imageData.data.set(data);
-          return imageData;
-        } else {
-          return new FakeImageData(data, width, height);
+  return Canvas$1;
+}();
+
+"undefined" != typeof window && (Canvas$1.Image = Image);var makeCanvasAndContext = function makeCanvasAndContext(t, e, a, n) {
+  var o = !(!e || !e.backgroundColor) && e.backgroundColor,
+      r = new Canvas$1(t.width * a, t.height * a, n),
+      i = r.getContext("2d");return o && (i.fillStyle = o, i.fillRect(0, 0, t.width * a, t.height * a), i.fillStyle = "transparent"), { canvas: r, ctx: i };
+},
+    toColor = function toColor(t) {
+  var e = makeCanvasAndContext({ width: 1, height: 1 }, {}, 1, !0).ctx;e.fillStyle = t, e.fillRect(0, 0, 1, 1);var a = e.getImageData(0, 0, 1, 1).data;return { r: a[0], g: a[1], b: a[2], a: a[3] / 255 };
+},
+    defaultParams = { accuracy: .7, blur: 4, fill: !0, stroke: !0, strokeWidth: .5, lineJoin: "miter", vertexCount: 700, threshold: 50, transparentColor: !1 };var allowedLineJoins = ["miter", "round", "bevel"];var sanitizeInput = function sanitizeInput(t) {
+  return "object" != _typeof(t = clone(t)) && (t = {}), "number" != typeof t.accuracy || isNaN(t.accuracy) ? t.accuracy = defaultParams.accuracy : t.accuracy = clamp(t.accuracy, 0, 1), ("number" != typeof t.blur || isNaN(t.blur)) && (t.blur = defaultParams.blur), t.blur <= 0 && (t.blur = 1), "string" != typeof t.fill && "boolean" != typeof t.fill && (t.fill = defaultParams.fill), "string" != typeof t.stroke && "boolean" != typeof t.stroke && (t.stroke = defaultParams.stroke), ("number" != typeof t.strokeWidth || isNaN(t.strokeWidth)) && (t.strokeWidth = defaultParams.strokeWidth), "number" != typeof t.threshold || isNaN(t.threshold) ? t.threshold = defaultParams.threshold : t.threshold = clamp(t.threshold, 1, 100), "string" == typeof t.lineJoin && -1 !== allowedLineJoins.indexOf(t.lineJoin) || (t.lineJoin = defaultParams.lineJoin), t.gradients && t.fill ? t.gradients = !0 : t.gradients = !1, t.gradients && (("number" != typeof t.gradientStops || isNaN(t.gradientStops) || t.gradientStops < 2) && (t.gradientStops = 2), t.gradientStops = Math.round(t.gradientStops)), ("number" != typeof t.vertexCount || isNaN(t.vertexCount)) && (t.vertexCount = defaultParams.vertexCount), t.vertexCount <= 0 && (t.vertexCount = 1), "string" != typeof t.transparentColor && "boolean" != typeof t.transparentColor && (t.transparentColor = defaultParams.transparentColor), !0 === _typeof(t.transparentColor) && (t.transparentColor = !1), "string" == typeof t.transparentColor && (t.transparentColor = toColor(t.transparentColor)), t;
+},
+    fromImageToImageData = function fromImageToImageData(t) {
+  if (t instanceof HTMLImageElement) {
+    if (!t.naturalWidth || !t.naturalHeight || !1 === t.complete) throw new Error("This this image hasn't finished loading: " + t.src);var e = new Canvas$1(t.naturalWidth, t.naturalHeight),
+        a = e.getContext("2d");a.drawImage(t, 0, 0, e.width, e.height);var n = a.getImageData(0, 0, e.width, e.height);return n.data && n.data.length && (void 0 === n.width && (n.width = t.naturalWidth), void 0 === n.height && (n.height = t.naturalHeight)), n;
+  }throw new Error("This object does not seem to be an image.");
+};var objectAssign = Object.assign;var toRGBA = function toRGBA(t) {
+  var e = objectAssign({ a: 1 }, t);return "rgba(" + e.r + ", " + e.g + ", " + e.b + ", " + e.a + ")";
+},
+    drawPolygonsOnContext = function drawPolygonsOnContext(t, e, a, n) {
+  return n = n || 1, e.forEach(function (e, a) {
+    if (t.beginPath(), t.moveTo(e.a.x * n, e.a.y * n), t.lineTo(e.b.x * n, e.b.y * n), t.lineTo(e.c.x * n, e.c.y * n), t.lineTo(e.a.x * n, e.a.y * n), e.gradient) {
+      var _a = t.createLinearGradient(e.gradient.x1 * n, e.gradient.y1 * n, e.gradient.x2 * n, e.gradient.y2 * n),
+          o = e.gradient.colors.length - 1;e.gradient.colors.forEach(function (t, e) {
+        var n = toRGBA(t);_a.addColorStop(e / o, n);
+      }), t.fillStyle = _a, t.fill(), e.strokeWidth > 0 && (t.strokeStyle = _a, t.lineWidth = e.strokeWidth * n, t.lineJoin = e.lineJoin, t.stroke());
+    } else e.fill && (t.fillStyle = e.fill, t.fill()), e.strokeColor && (t.strokeStyle = e.strokeColor, t.lineWidth = e.strokeWidth * n, t.lineJoin = e.lineJoin, t.stroke());t.closePath();
+  }), t;
+},
+    polygonsToImageData = function polygonsToImageData(t, e, a) {
+  var n = a && a.dpr ? a.dpr : 1,
+      o = makeCanvasAndContext(e, a, n, !0).ctx;return drawPolygonsOnContext(o, t, e, n), o.getImageData(0, 0, e.width * n, e.height * n);
+},
+    polygonsToDataURL = function polygonsToDataURL(t, e, a) {
+  var n = a && a.dpr ? a.dpr : 1,
+      o = makeCanvasAndContext(e, a, n);return drawPolygonsOnContext(o.ctx, t, e, n), o.canvas.toDataURL();
+},
+    polygonsToSVG = function polygonsToSVG(t, e) {
+  var a = "";t.length && t[0].gradient && (a = "<defs>");var n = "";t.forEach(function (t, e) {
+    var o = t.a,
+        r = t.b,
+        i = t.c;
+    if (n += "<polygon points=\"" + o.x + "," + o.y + " " + r.x + "," + r.y + " " + i.x + "," + i.y + "\"", t.gradient) {
+      var _o = t.boundingBox,
+          _r = ((t.gradient.x1 - _o.x) / _o.width * 100).toFixed(3),
+          _i = ((t.gradient.y1 - _o.y) / _o.height * 100).toFixed(3),
+          s = ((t.gradient.x2 - _o.x) / _o.width * 100).toFixed(3),
+          l = ((t.gradient.y2 - _o.y) / _o.height * 100).toFixed(3);a += "\n\t<linearGradient id=\"gradient-" + e + "\" x1=\"" + _r + "%\" y1=\"" + _i + "%\" x2=\"" + s + "%\" y2=\"" + l + "%\">";var h = t.gradient.colors.length - 1;t.gradient.colors.forEach(function (t, e) {
+        var n = toRGBA(t),
+            o = (e / h * 100).toFixed(3);a += "\n\t\t\t\t\t<stop offset=\"" + o + "%\" stop-color=\"" + n + "\"/>\n\t\t\t\t";
+      }), a += "</linearGradient>", n += " fill=\"url(#gradient-" + e + ")\"", t.strokeWidth > 0 && (n += " stroke=\"url(#gradient-" + e + ")\" stroke-width=\"" + t.strokeWidth + "\" stroke-linejoin=\"" + t.lineJoin + "\"");
+    } else t.fill ? n += " fill=\"" + t.fill + "\"" : n += ' fill="transparent"', t.strokeColor && (n += " stroke=\"" + t.strokeColor + "\" stroke-width=\"" + t.strokeWidth + "\" stroke-linejoin=\"" + t.lineJoin + "\"");n += "/>\n\t";
+  }), a.length && (a += "\n\t\t</defs>");return "<?xml version=\"1.0\" standalone=\"yes\"?>\n<svg width=\"" + e.width + "\" height=\"" + e.height + "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" >\n\t" + a + "\n\t" + n + "\n</svg>";
+},
+    commonjsGlobal = "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self ? self : {},
+    delaunay = createCommonjsModule(function (t) {
+  function e(t, e, a) {
+    this.a = t, this.b = e, this.c = a;var n,
+        o,
+        r,
+        i,
+        s = e.x - t.x,
+        l = e.y - t.y,
+        h = a.x - t.x,
+        g = a.y - t.y,
+        d = s * (t.x + e.x) + l * (t.y + e.y),
+        c = h * (t.x + a.x) + g * (t.y + a.y),
+        u = 2 * (s * (a.y - e.y) - l * (a.x - e.x));Math.abs(u) < 1e-6 ? (n = Math.min(t.x, e.x, a.x), o = Math.min(t.y, e.y, a.y), r = .5 * (Math.max(t.x, e.x, a.x) - n), i = .5 * (Math.max(t.y, e.y, a.y) - o), this.x = n + r, this.y = o + i, this.r = r * r + i * i) : (this.x = (g * d - l * c) / u, this.y = (s * c - h * d) / u, r = this.x - t.x, i = this.y - t.y, this.r = r * r + i * i);
+  }function a(t, e) {
+    return e.x - t.x;
+  }function n(t) {
+    var e,
+        a,
+        n,
+        o,
+        r,
+        i = t.length;t: for (; i;) {
+      for (a = t[--i], e = t[--i], n = i; n;) {
+        if (r = t[--n], o = t[--n], e === o && a === r || e === r && a === o) {
+          t.splice(i, 2), t.splice(n, 2), i -= 2;continue t;
         }
-      } else {
-        return new FakeImageData(data, width, height);
       }
     }
+  }function o(t) {
+    if (t.length < 3) return [];t.sort(a);for (var o = t.length - 1, r = t[o].x, i = t[0].x, s = t[o].y, l = s; o--;) {
+      t[o].y < s && (s = t[o].y), t[o].y > l && (l = t[o].y);
+    }var h,
+        g,
+        d,
+        c = i - r,
+        u = l - s,
+        y = c > u ? c : u,
+        f = .5 * (i + r),
+        p = .5 * (l + s),
+        m = [new e({ x: f - 20 * y, y: p - y, __sentinel: !0 }, { x: f, y: p + 20 * y, __sentinel: !0 }, { x: f + 20 * y, y: p - y, __sentinel: !0 })],
+        x = [],
+        w = [];for (o = t.length; o--;) {
+      for (w.length = 0, h = m.length; h--;) {
+        (c = t[o].x - m[h].x) > 0 && c * c > m[h].r ? (x.push(m[h]), m.splice(h, 1)) : c * c + (u = t[o].y - m[h].y) * u > m[h].r || (w.push(m[h].a, m[h].b, m[h].b, m[h].c, m[h].c, m[h].a), m.splice(h, 1));
+      }for (n(w), h = w.length; h;) {
+        d = w[--h], g = w[--h], m.push(new e(g, d, t[o]));
+      }
+    }for (Array.prototype.push.apply(x, m), o = x.length; o--;) {
+      (x[o].a.__sentinel || x[o].b.__sentinel || x[o].c.__sentinel) && x.splice(o, 1);
+    }return x;
+  }e.prototype.draw = function (t) {
+    t.beginPath(), t.moveTo(this.a.x, this.a.y), t.lineTo(this.b.x, this.b.y), t.lineTo(this.c.x, this.c.y), t.closePath(), t.stroke();
+  }, t.exports = { Triangle: e, triangulate: o };
+}),
+    delaunay_2 = delaunay.triangulate,
+    sobel = createCommonjsModule(function (t, e) {
+  !function (a) {
+    "use strict";
+    function n(t) {
+      function e(t) {
+        return function (e, a, n) {
+          return n = n || 0, t[4 * (r * a + e) + n];
+        };
+      }if (!(this instanceof n)) return new n(t);var a,
+          o,
+          r = t.width,
+          i = t.height,
+          s = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
+          l = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
+          h = [],
+          g = [],
+          d = e(t.data);for (o = 0; o < i; o++) {
+        for (a = 0; a < r; a++) {
+          var c = (d(a, o, 0) + d(a, o, 1) + d(a, o, 2)) / 3;g.push(c, c, c, 255);
+        }
+      }for (d = e(g), o = 0; o < i; o++) {
+        for (a = 0; a < r; a++) {
+          var u = s[0][0] * d(a - 1, o - 1) + s[0][1] * d(a, o - 1) + s[0][2] * d(a + 1, o - 1) + s[1][0] * d(a - 1, o) + s[1][1] * d(a, o) + s[1][2] * d(a + 1, o) + s[2][0] * d(a - 1, o + 1) + s[2][1] * d(a, o + 1) + s[2][2] * d(a + 1, o + 1),
+              y = l[0][0] * d(a - 1, o - 1) + l[0][1] * d(a, o - 1) + l[0][2] * d(a + 1, o - 1) + l[1][0] * d(a - 1, o) + l[1][1] * d(a, o) + l[1][2] * d(a + 1, o) + l[2][0] * d(a - 1, o + 1) + l[2][1] * d(a, o + 1) + l[2][2] * d(a + 1, o + 1),
+              f = Math.sqrt(u * u + y * y) >>> 0;h.push(f, f, f, 255);
+        }
+      }var p = h;return "function" == typeof Uint8ClampedArray && (p = new Uint8ClampedArray(h)), p.toImageData = function () {
+        return n.toImageData(p, r, i);
+      }, p;
+    }function o(t, e, a) {
+      return { width: e, height: a, data: t };
+    }n.toImageData = function (t, e, a) {
+      if ("function" == typeof ImageData && "[object Uint16Array]" === Object.prototype.toString.call(t)) return new ImageData(t, e, a);if ("object" == (typeof window === "undefined" ? "undefined" : _typeof(window)) && "object" == _typeof(window.document)) {
+        var n = document.createElement("canvas");if ("function" == typeof n.getContext) {
+          var r = n.getContext("2d").createImageData(e, a);return r.data.set(t), r;
+        }return new o(t, e, a);
+      }return new o(t, e, a);
+    }, t.exports && (e = t.exports = n), e.Sobel = n;
+  }();
+}),
+    isImageData = function isImageData(t) {
+  return t && "number" == typeof t.width && "number" == typeof t.height && t.data && "number" == typeof t.data.length && "object" == _typeof(t.data);
+},
+    copyImageData = function copyImageData(t) {
+  if (isImageData(t)) {
+    if ("undefined" == typeof Uint8ClampedArray) {
+      if ("undefined" == typeof window) throw new Error("Can't copy imageData in webworker without Uint8ClampedArray support.");return copyImageDataWithCanvas(t);
+    }{
+      var e = new Uint8ClampedArray(t.data);if ("undefined" == typeof ImageData) return { width: t.width, height: t.height, data: e };{
+        var a = void 0;try {
+          a = new ImageData(e, t.width, t.height);
+        } catch (e) {
+          if ("undefined" == typeof window) throw new Error("Can't copy imageData in webworker without proper ImageData() support.");a = copyImageDataWithCanvas(t);
+        }return a;
+      }
+    }
+  }throw new Error("Given imageData object is not useable.");
+};var mul_table = [512, 512, 456, 512, 328, 456, 335, 512, 405, 328, 271, 456, 388, 335, 292, 512, 454, 405, 364, 328, 298, 271, 496, 456, 420, 388, 360, 335, 312, 292, 273, 512, 482, 454, 428, 405, 383, 364, 345, 328, 312, 298, 284, 271, 259, 496, 475, 456, 437, 420, 404, 388, 374, 360, 347, 335, 323, 312, 302, 292, 282, 273, 265, 512, 497, 482, 468, 454, 441, 428, 417, 405, 394, 383, 373, 364, 354, 345, 337, 328, 320, 312, 305, 298, 291, 284, 278, 271, 265, 259, 507, 496, 485, 475, 465, 456, 446, 437, 428, 420, 412, 404, 396, 388, 381, 374, 367, 360, 354, 347, 341, 335, 329, 323, 318, 312, 307, 302, 297, 292, 287, 282, 278, 273, 269, 265, 261, 512, 505, 497, 489, 482, 475, 468, 461, 454, 447, 441, 435, 428, 422, 417, 411, 405, 399, 394, 389, 383, 378, 373, 368, 364, 359, 354, 350, 345, 341, 337, 332, 328, 324, 320, 316, 312, 309, 305, 301, 298, 294, 291, 287, 284, 281, 278, 274, 271, 268, 265, 262, 259, 257, 507, 501, 496, 491, 485, 480, 475, 470, 465, 460, 456, 451, 446, 442, 437, 433, 428, 424, 420, 416, 412, 408, 404, 400, 396, 392, 388, 385, 381, 377, 374, 370, 367, 363, 360, 357, 354, 350, 347, 344, 341, 338, 335, 332, 329, 326, 323, 320, 318, 315, 312, 310, 307, 304, 302, 299, 297, 294, 292, 289, 287, 285, 282, 280, 278, 275, 273, 271, 269, 267, 265, 263, 261, 259],
+    shg_table = [9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24];var stackblur = function stackblur(t, e, a, n, o, r) {
+  var i,
+      s,
+      l,
+      h,
+      g,
+      d,
+      c,
+      u,
+      y,
+      f,
+      p,
+      m,
+      x,
+      w,
+      b,
+      C,
+      v,
+      D,
+      k,
+      P,
+      I,
+      B,
+      _,
+      E,
+      S = t.data,
+      W = r + r + 1,
+      M = n - 1,
+      T = o - 1,
+      j = r + 1,
+      G = j * (j + 1) / 2,
+      $ = new BlurStack(),
+      J = $;for (l = 1; l < W; l++) {
+    if (J = J.next = new BlurStack(), l == j) var A = J;
+  }J.next = $;var U = null,
+      L = null;c = d = 0;var O = mul_table[r],
+      V = shg_table[r];for (s = 0; s < o; s++) {
+    for (C = v = D = k = u = y = f = p = 0, m = j * (P = S[d]), x = j * (I = S[d + 1]), w = j * (B = S[d + 2]), b = j * (_ = S[d + 3]), u += G * P, y += G * I, f += G * B, p += G * _, J = $, l = 0; l < j; l++) {
+      J.r = P, J.g = I, J.b = B, J.a = _, J = J.next;
+    }for (l = 1; l < j; l++) {
+      h = d + ((M < l ? M : l) << 2), u += (J.r = P = S[h]) * (E = j - l), y += (J.g = I = S[h + 1]) * E, f += (J.b = B = S[h + 2]) * E, p += (J.a = _ = S[h + 3]) * E, C += P, v += I, D += B, k += _, J = J.next;
+    }for (U = $, L = A, i = 0; i < n; i++) {
+      S[d + 3] = _ = p * O >> V, 0 != _ ? (_ = 255 / _, S[d] = (u * O >> V) * _, S[d + 1] = (y * O >> V) * _, S[d + 2] = (f * O >> V) * _) : S[d] = S[d + 1] = S[d + 2] = 0, u -= m, y -= x, f -= w, p -= b, m -= U.r, x -= U.g, w -= U.b, b -= U.a, h = c + ((h = i + r + 1) < M ? h : M) << 2, u += C += U.r = S[h], y += v += U.g = S[h + 1], f += D += U.b = S[h + 2], p += k += U.a = S[h + 3], U = U.next, m += P = L.r, x += I = L.g, w += B = L.b, b += _ = L.a, C -= P, v -= I, D -= B, k -= _, L = L.next, d += 4;
+    }c += n;
+  }for (i = 0; i < n; i++) {
+    for (v = D = k = C = y = f = p = u = 0, m = j * (P = S[d = i << 2]), x = j * (I = S[d + 1]), w = j * (B = S[d + 2]), b = j * (_ = S[d + 3]), u += G * P, y += G * I, f += G * B, p += G * _, J = $, l = 0; l < j; l++) {
+      J.r = P, J.g = I, J.b = B, J.a = _, J = J.next;
+    }for (g = n, l = 1; l <= r; l++) {
+      d = g + i << 2, u += (J.r = P = S[d]) * (E = j - l), y += (J.g = I = S[d + 1]) * E, f += (J.b = B = S[d + 2]) * E, p += (J.a = _ = S[d + 3]) * E, C += P, v += I, D += B, k += _, J = J.next, l < T && (g += n);
+    }for (d = i, U = $, L = A, s = 0; s < o; s++) {
+      S[(h = d << 2) + 3] = _ = p * O >> V, _ > 0 ? (_ = 255 / _, S[h] = (u * O >> V) * _, S[h + 1] = (y * O >> V) * _, S[h + 2] = (f * O >> V) * _) : S[h] = S[h + 1] = S[h + 2] = 0, u -= m, y -= x, f -= w, p -= b, m -= U.r, x -= U.g, w -= U.b, b -= U.a, h = i + ((h = s + j) < T ? h : T) * n << 2, u += C += U.r = S[h], y += v += U.g = S[h + 1], f += D += U.b = S[h + 2], p += k += U.a = S[h + 3], U = U.next, m += P = L.r, x += I = L.g, w += B = L.b, b += _ = L.a, C -= P, v -= I, D -= B, k -= _, L = L.next, d += n;
+    }
+  }return t;
+},
+    greyscale = function greyscale(t) {
+  var e = t.data.length;var a = void 0;for (var n = 0; n < e; n += 4) {
+    a = .34 * t.data[n] + .5 * t.data[n + 1] + .16 * t.data[n + 2], t.data[n] = a, t.data[n + 1] = a, t.data[n + 2] = a;
+  }return t;
+},
+    getEdgePoints = function getEdgePoints(t, e) {
+  var a = t.width,
+      n = t.height,
+      o = t.data,
+      r = [];var i, s, l, h, g, d, c, u, y;for (s = 0; s < n; s += 2) {
+    for (i = 0; i < a; i += 2) {
+      for (u = y = 0, l = -1; l <= 1; l++) {
+        if (d = s + l, c = d * a, d >= 0 && d < n) for (h = -1; h <= 1; h++) {
+          (g = i + h) >= 0 && g < a && (u += o[g + c << 2], y++);
+        }
+      }y && (u /= y), u > e && r.push({ x: i, y: s });
+    }
+  }return r;
+},
+    getVerticesFromPoints = function getVerticesFromPoints(t, e, a, n, o) {
+  var r = {},
+      i = Math.max(~~(e * (1 - a)), 5),
+      s = Math.round(Math.sqrt(i)),
+      l = ~~(n / s),
+      h = ~~(o / Math.round(Math.ceil(i / s)));var g = 0,
+      d = 0,
+      c = 0,
+      u = 0;for (u = 0; u < o; u += h) {
+    for (c = d = ++g % 2 == 0 ? ~~(l / 2) : 0; c < n; c += l) {
+      c < n && u < o && addVertex(~~(c + Math.cos(u) * h), ~~(u + Math.sin(c) * l), r);
+    }
+  }addVertex(0, 0, r), addVertex(n - 1, 0, r), addVertex(n - 1, o - 1, r), addVertex(0, o - 1, r);var y = e - Object.keys(r).length,
+      f = t.length,
+      p = ~~(f / y);if (e > 0 && p > 0) {
+    var _e = 0;for (_e = 0; _e < f; _e += p) {
+      addVertex(t[_e].x, t[_e].y, r);
+    }
+  }return t = null, Object.keys(r).map(function (t) {
+    return r[t];
+  });
+},
+    getBoundingBox = function getBoundingBox(t) {
+  var e = 1 / 0,
+      a = -1 / 0,
+      n = 1 / 0,
+      o = -1 / 0;return t.forEach(function (t) {
+    t.x < e && (e = t.x), t.y < n && (n = t.y), t.x > a && (a = t.x), t.y > o && (o = t.y);
+  }), { x: e, y: n, width: a - e, height: o - n };
+},
+    addBoundingBoxesToPolygons = function addBoundingBoxesToPolygons(t, e, a) {
+  return t.forEach(function (t) {
+    t.boundingBox = getBoundingBox([t.a, t.b, t.c]);
+  }), t.filter(function (t) {
+    return t.boundingBox.width > 0 && t.boundingBox.height > 0;
+  });
+},
+    getColorByPos = function getColorByPos(t, e, a) {
+  var n = (0 | clamp(t.x, 1, e.width - 2)) + (0 | clamp(t.y, 1, e.height - 2)) * e.width << 2;n >= e.data.length && (n = e.data.length - 5);var o = e.data[n + 3] / 255;return a && 0 === o ? a : { r: e.data[n], g: e.data[n + 1], b: e.data[n + 2], a: o };
+},
+    polygonCenter = function polygonCenter(t) {
+  return { x: .33333 * (t.a.x + t.b.x + t.c.x), y: .33333 * (t.a.y + t.b.y + t.c.y) };
+},
+    isTransparent = function isTransparent(t) {
+  return 0 === t.a;
+},
+    addColorToPolygons = function addColorToPolygons(t, e, a) {
+  var n = a.fill,
+      o = a.stroke,
+      r = a.strokeWidth,
+      i = a.lineJoin,
+      s = a.transparentColor,
+      l = "string" == typeof n && n,
+      h = "string" == typeof o && o,
+      g = function g(t, e) {
+    var a = isTransparent(t) && s;return e && !a ? e : toRGBA(a ? s : t);
   };
 
-  function FakeImageData(data, width, height) {
-    return {
-      width: width,
-      height: height,
-      data: data
-    };
-  }
-
-  {
-    if ('object' !== 'undefined' && module.exports) {
-      exports = module.exports = Sobel;
-    }
-    exports.Sobel = Sobel;
-  }
-
-})(commonjsGlobal);
-});
-
-var isImageData = function (imageData) {
-	return (
-		imageData && 
-		typeof imageData.width === 'number' &&
-		typeof imageData.height === 'number' &&
-		imageData.data &&
-		typeof imageData.data.length === 'number' &&
-		typeof imageData.data === 'object'
-	);
-};
-
-var copyImageData = function (imageData) {
-	if ( isImageData ( imageData ) ) {
-		if ( typeof Uint8ClampedArray === 'undefined' ) {
-			if ( typeof window === 'undefined' ) {
-				throw new Error( "Can't copy imageData in webworker without Uint8ClampedArray support." );
-				return imageData;
-			} else {
-				return copyImageDataWithCanvas( imageData );
-			}
-		} else {
-			var clampedArray = new Uint8ClampedArray( imageData.data );
-
-			if ( typeof ImageData === 'undefined' ) {
-				// http://stackoverflow.com/a/15238036/229189
-				return {
-					width: imageData.width,
-					height: imageData.height,
-					data: clampedArray
-				};
-			} else {
-				// http://stackoverflow.com/a/15908922/229189#comment57192591_15908922
-				var result;
-
-				try {
-					result = new ImageData( clampedArray, imageData.width, imageData.height );
-				} catch ( err ) {
-					if ( typeof window === 'undefined' ) {
-						throw new Error( "Can't copy imageData in webworker without proper ImageData() support." );
-						result = imageData;
-					} else {
-						result = copyImageDataWithCanvas( imageData );
-					}
-				}
-
-				return result;
-			}
-		}
-	} else {
-		throw new Error( 'Given imageData object is not useable.' );
-		return;
-	}
-};
-
-// http://stackoverflow.com/a/11918126/229189
-function copyImageDataWithCanvas ( imageData ) {
-	var canvas = new Canvas$1( imageData.width, imageData.height );
-	var ctx = canvas.getContext( '2d' );
-
-	ctx.putImageData( imageData, 0, 0 );
-				
-	return ctx.getImageData( 0, 0, imageData.width, imageData.height );
-}
-
-/*
-    StackBlur - a fast almost Gaussian Blur For Canvas
-
-    Version:     0.5
-    Author:        Mario Klingemann
-    Contact:     mario@quasimondo.com
-    Website:    http://www.quasimondo.com/StackBlurForCanvas
-    Twitter:    @quasimondo
-
-    In case you find this class useful - especially in commercial projects -
-    I am not totally unhappy for a small donation to my PayPal account
-    mario@quasimondo.de
-
-    Or support me on flattr:
-    https://flattr.com/thing/72791/StackBlur-a-fast-almost-Gaussian-Blur-Effect-for-CanvasJavascript
-
-    Copyright (c) 2010 Mario Klingemann
-
-    Permission is hereby granted, free of charge, to any person
-    obtaining a copy of this software and associated documentation
-    files (the "Software"), to deal in the Software without
-    restriction, including without limitation the rights to use,
-    copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following
-    conditions:
-
-    The above copyright notice and this permission notice shall be
-    included in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-    OTHER DEALINGS IN THE SOFTWARE.
-    */
-
-var mul_table = [
-    512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,
-    454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,
-    482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,
-    437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,
-    497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,
-    320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,
-    446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,
-    329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,
-    505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,
-    399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,
-    324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,
-    268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,
-    451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,
-    385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,
-    332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,
-    289,287,285,282,280,278,275,273,271,269,267,265,263,261,259];
-
-
-var shg_table = [
-    9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17,
-    17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19,
-    19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20,
-    20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21,
-    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,
-    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22,
-    22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22,
-    22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23,
-    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,
-    23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,
-    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 ];
-
-function BlurStack () {
-	this.r = 0;
-	this.g = 0;
-	this.b = 0;
-	this.a = 0;
-	this.next = null;
-}
-
-var stackblur = function ( imageData, top_x, top_y, width, height, radius ) {
-	var pixels = imageData.data;
-
-	var x, y, i, p, yp, yi, yw, r_sum, g_sum, b_sum, a_sum,
-		r_out_sum, g_out_sum, b_out_sum, a_out_sum,
-		r_in_sum, g_in_sum, b_in_sum, a_in_sum,
-		pr, pg, pb, pa, rbs;
-
-	var div = radius + radius + 1;
-	var widthMinus1  = width - 1;
-	var heightMinus1 = height - 1;
-	var radiusPlus1  = radius + 1;
-	var sumFactor = radiusPlus1 * ( radiusPlus1 + 1 ) / 2;
-
-	var stackStart = new BlurStack();
-	var stack = stackStart;
-	
-	for ( i = 1; i < div; i++ ) {
-		stack = stack.next = new BlurStack();
-		if (i == radiusPlus1) { var stackEnd = stack; }
-	}
-	stack.next = stackStart;
-	
-	var stackIn = null;
-	var stackOut = null;
-
-	yw = yi = 0;
-
-	var mul_sum = mul_table[radius];
-	var shg_sum = shg_table[radius];
-
-	for ( y = 0; y < height; y++ ) {
-		r_in_sum = g_in_sum = b_in_sum = a_in_sum = r_sum = g_sum = b_sum = a_sum = 0;
-
-		r_out_sum = radiusPlus1 * ( pr = pixels[yi] );
-		g_out_sum = radiusPlus1 * ( pg = pixels[yi+1] );
-		b_out_sum = radiusPlus1 * ( pb = pixels[yi+2] );
-		a_out_sum = radiusPlus1 * ( pa = pixels[yi+3] );
-
-		r_sum += sumFactor * pr;
-		g_sum += sumFactor * pg;
-		b_sum += sumFactor * pb;
-		a_sum += sumFactor * pa;
-
-		stack = stackStart;
-
-		for ( i = 0; i < radiusPlus1; i++ ) {
-			stack.r = pr;
-			stack.g = pg;
-			stack.b = pb;
-			stack.a = pa;
-			stack = stack.next;
-		}
-
-		for ( i = 1; i < radiusPlus1; i++ ) {
-			p = yi + ( ( widthMinus1 < i ? widthMinus1 : i ) << 2 );
-			r_sum += ( stack.r = ( pr = pixels[p] ) ) * ( rbs = radiusPlus1 - i );
-			g_sum += ( stack.g = ( pg = pixels[p+1] ) ) * rbs;
-			b_sum += ( stack.b = ( pb = pixels[p+2] ) ) * rbs;
-			a_sum += ( stack.a = ( pa = pixels[p+3] ) ) * rbs;
-
-			r_in_sum += pr;
-			g_in_sum += pg;
-			b_in_sum += pb;
-			a_in_sum += pa;
-
-			stack = stack.next;
-		}
-
-
-		stackIn = stackStart;
-		stackOut = stackEnd;
-
-		for (x = 0; x < width; x++) {
-			pixels[yi+3] = pa = (a_sum * mul_sum) >> shg_sum;
-			
-			if (pa != 0) {
-				pa = 255 / pa;
-				pixels[yi]   = ( ( r_sum * mul_sum ) >> shg_sum ) * pa;
-				pixels[yi+1] = ( ( g_sum * mul_sum ) >> shg_sum ) * pa;
-				pixels[yi+2] = ( ( b_sum * mul_sum ) >> shg_sum ) * pa;
-			} else {
-				pixels[yi] = pixels[yi+1] = pixels[yi+2] = 0;
-			}
-
-			r_sum -= r_out_sum;
-			g_sum -= g_out_sum;
-			b_sum -= b_out_sum;
-			a_sum -= a_out_sum;
-
-			r_out_sum -= stackIn.r;
-			g_out_sum -= stackIn.g;
-			b_out_sum -= stackIn.b;
-			a_out_sum -= stackIn.a;
-
-			p =  ( yw + ( ( p = x + radius + 1 ) < widthMinus1 ? p : widthMinus1 ) ) << 2;
-
-			r_in_sum += ( stackIn.r = pixels[p] );
-			g_in_sum += ( stackIn.g = pixels[p+1] );
-			b_in_sum += ( stackIn.b = pixels[p+2] );
-			a_in_sum += ( stackIn.a = pixels[p+3] );
-
-			r_sum += r_in_sum;
-			g_sum += g_in_sum;
-			b_sum += b_in_sum;
-			a_sum += a_in_sum;
-
-			stackIn = stackIn.next;
-
-			r_out_sum += ( pr = stackOut.r );
-			g_out_sum += ( pg = stackOut.g );
-			b_out_sum += ( pb = stackOut.b );
-			a_out_sum += ( pa = stackOut.a );
-
-			r_in_sum -= pr;
-			g_in_sum -= pg;
-			b_in_sum -= pb;
-			a_in_sum -= pa;
-
-			stackOut = stackOut.next;
-
-			yi += 4;
-		}
-		yw += width;
-	}
-
-
-	for ( x = 0; x < width; x++ ) {
-		g_in_sum = b_in_sum = a_in_sum = r_in_sum = g_sum = b_sum = a_sum = r_sum = 0;
-
-		yi = x << 2;
-		r_out_sum = radiusPlus1 * ( pr = pixels[yi] );
-		g_out_sum = radiusPlus1 * ( pg = pixels[yi+1] );
-		b_out_sum = radiusPlus1 * ( pb = pixels[yi+2] );
-		a_out_sum = radiusPlus1 * ( pa = pixels[yi+3] );
-
-		r_sum += sumFactor * pr;
-		g_sum += sumFactor * pg;
-		b_sum += sumFactor * pb;
-		a_sum += sumFactor * pa;
-
-		stack = stackStart;
-
-		for ( i = 0; i < radiusPlus1; i++) {
-			stack.r = pr;
-			stack.g = pg;
-			stack.b = pb;
-			stack.a = pa;
-			stack = stack.next;
-		}
-
-		yp = width;
-
-		for ( i = 1; i <= radius; i++ ) {
-			yi = ( yp + x ) << 2;
-
-			r_sum += ( stack.r = ( pr = pixels[yi] ) ) * (rbs = radiusPlus1 - i);
-			g_sum += ( stack.g = ( pg = pixels[yi+1] ) ) * rbs;
-			b_sum += ( stack.b = ( pb = pixels[yi+2] ) ) * rbs;
-			a_sum += ( stack.a = ( pa = pixels[yi+3] ) ) * rbs;
-
-			r_in_sum += pr;
-			g_in_sum += pg;
-			b_in_sum += pb;
-			a_in_sum += pa;
-
-			stack = stack.next;
-
-			if ( i < heightMinus1 ) {
-				yp += width;
-			}
-		}
-
-		yi = x;
-		stackIn = stackStart;
-		stackOut = stackEnd;
-
-		for ( y = 0; y < height; y++ ) {
-			p = yi << 2;
-			pixels[p+3] = pa = ( a_sum * mul_sum ) >> shg_sum;
-			
-			if ( pa > 0 ) {
-				pa = 255 / pa;
-				pixels[p]   = ( ( r_sum * mul_sum ) >> shg_sum) * pa;
-				pixels[p+1] = ( ( g_sum * mul_sum ) >> shg_sum) * pa;
-				pixels[p+2] = ( ( b_sum * mul_sum ) >> shg_sum) * pa;
-			} else {
-				pixels[p] = pixels[p+1] = pixels[p+2] = 0;
-			}
-
-			r_sum -= r_out_sum;
-			g_sum -= g_out_sum;
-			b_sum -= b_out_sum;
-			a_sum -= a_out_sum;
-
-			r_out_sum -= stackIn.r;
-			g_out_sum -= stackIn.g;
-			b_out_sum -= stackIn.b;
-			a_out_sum -= stackIn.a;
-
-			p = ( x + ( ( ( p = y + radiusPlus1 ) < heightMinus1 ? p : heightMinus1 ) * width ) ) << 2;
-
-			r_sum += ( r_in_sum += ( stackIn.r = pixels[p] ) );
-			g_sum += ( g_in_sum += ( stackIn.g = pixels[p+1] ) );
-			b_sum += ( b_in_sum += ( stackIn.b = pixels[p+2] ) );
-			a_sum += ( a_in_sum += ( stackIn.a = pixels[p+3] ) );
-
-			stackIn = stackIn.next;
-
-			r_out_sum += ( pr = stackOut.r );
-			g_out_sum += ( pg = stackOut.g );
-			b_out_sum += ( pb = stackOut.b );
-			a_out_sum += ( pa = stackOut.a );
-
-			r_in_sum -= pr;
-			g_in_sum -= pg;
-			b_in_sum -= pb;
-			a_in_sum -= pa;
-
-			stackOut = stackOut.next;
-
-			yi += width;
-		}
-	}
-
-	return imageData;
-};
-
-var greyscale = function (imageData) {
-	var len = imageData.data.length;
-	var brightness;
-
-	for ( var i = 0; i < len; i += 4 ) {
-		brightness = 0.34 * imageData.data[i] + 0.5 * imageData.data[i + 1] + 0.16 * imageData.data[i + 2];
-
-		imageData.data[i] = brightness;
-		imageData.data[i + 1] = brightness;
-		imageData.data[i + 2] = brightness;
-	}
-		
-	return imageData;
-};
-
-// most parts taken from http://jsdo.it/akm2/xoYx
-// (starting line 293++)
-var getEdgePoints = function ( imageData, threshold ) {
-	// only check every 2nd pixel in imageData to save some time.
-	var multiplier = 2;
-	var width = imageData.width;
-	var height = imageData.height;
-	var data = imageData.data;
-	var points = [ ];
-	var x, y, row, col, sx, sy, step, sum, total;
-
-	for ( y = 0; y < height; y += multiplier ) {
-		for ( x = 0; x < width; x += multiplier ) {
-			sum = total = 0;
-
-			for ( row = -1; row <= 1; row++ ) {
-				sy = y + row;
-				step = sy * width;
-
-				if ( sy >= 0 && sy < height ) {
-					for ( col = -1; col <= 1; col++ ) {
-						sx = x + col;
-
-						if ( sx >= 0 && sx < width ) {
-							sum += data[( sx + step ) << 2];
-							total++;
-						}
-					}
-				}
-			}
-
-			if ( total ) {
-				sum /= total;
-			}
-
-			if ( sum > threshold ) {
-				points.push( { x: x, y: y } );
-			}
-		}
-	}
-
-	return points;
-};
-
-function addVertex ( x, y, hash ) {
-	var resultKey = x + '|' + y;
-
-	if ( ! hash[resultKey] ) {
-		hash[resultKey] = { x: x, y: y };
-	}
-
-	resultKey = null;
-}
-
-var getVerticesFromPoints = function ( points, maxPointCount, accuracy, width, height ) {
-	// using hash for all points to make sure we have a set of unique vertices.
-	var resultHash = {};
-
-	// use 25% of max point count to create a background grid.
-	// this avoids having too many "big" triangles in areas of the image with low contrast 
-	// next to very small ones in areas with high contrast
-	// for every other row, start the x value at > 0, so the grid doesn't look too regular
-	var gridPointCount = Math.max( ~~( maxPointCount * ( 1 - accuracy ) ), 5 );
-
-	// http://stackoverflow.com/a/4107092/229189
-	var gridColumns = Math.round( Math.sqrt( gridPointCount ) );
-	var gridRows = Math.round( Math.ceil( gridPointCount / gridColumns ) );
-	
-	var xIncrement = ~~( width / gridColumns );
-	var yIncrement = ~~( height / gridRows );
-
-	var rowIndex = 0;
-	var startX = 0;
-
-	var x = 0;
-	var y = 0;
-
-	for ( y = 0; y < height; y+= yIncrement ){
-		rowIndex++;
-
-		startX = rowIndex % 2 === 0 ? ~~( xIncrement / 2 ) : 0; 
-
-		for ( x = startX; x < width; x += xIncrement ) {
-			if ( x < width && y < height ) {
-				// "distorting" the grid a little bit so that the
-				// background vertices don't appear to be on a straight line (which looks boring)
-				addVertex(
-					~~( x + ( Math.cos( y ) * ( yIncrement ) ) ),
-					~~( y + ( Math.sin( x ) * ( xIncrement ) ) ),
-					resultHash
-				);
-			}
-		}
-	}
-	
-	// add points in the corners
-	addVertex( 0, 0, resultHash );
-	addVertex( width - 1, 0, resultHash );
-	addVertex( width - 1, height - 1, resultHash );
-	addVertex( 0, height - 1, resultHash );
-
-	// add points from all edge points
-	var remainingPointCount = maxPointCount - Object.keys( resultHash ).length;
-	var edgePointCount = points.length;
-	var increment = ~~( edgePointCount / remainingPointCount );
-
-	if ( maxPointCount > 0 && increment > 0 ) {
-		var i = 0;
-
-		for ( i = 0; i < edgePointCount; i += increment ) {
-			addVertex( points[i].x, points[i].y, resultHash );
-		}
-	}
-
-	points = null;
-
-	return Object.keys( resultHash ).map( function (key) {
-		return resultHash[key];
-	} );
-};
-
-var getBoundingBox = function (points) {
-	var xMin = Infinity;
-	var xMax = -Infinity;
-	var yMin = Infinity;
-	var yMax = -Infinity;
-
-	points.forEach( function (p) {
-		if ( p.x < xMin ) {
-			xMin = p.x;
-		}
-
-		if ( p.y < yMin ) {
-			yMin = p.y;
-		}
-
-		if ( p.x > xMax ) {
-			xMax = p.x;
-		}
-
-		if ( p.y > yMax ) {
-			yMax = p.y;
-		}
-	} );
-
-	return {
-		x: xMin,
-		y: yMin,
-		width: xMax - xMin,
-		height: yMax - yMin
-	};
-};
-
-var addBoundingBoxesToPolygons = function ( polygons, colorData, params ) {
-	polygons.forEach( function (polygon) {
-		polygon.boundingBox = getBoundingBox( [ polygon.a, polygon.b, polygon.c ] );
-	} );
-
-	return polygons.filter( function (polygon) {
-		return polygon.boundingBox.width > 0 && polygon.boundingBox.height > 0;
-	} );
-};
-
-/**
- * Get color object by position
- * @param  {Object} pos         {x,y} object
- * @param  {Object} colorData   Image color data object
- * @param  {Object} [transparentColor] (optional) RGBA color object. Used to set specific color to transparent pixels
- * @return {Object}             RGBA color object
- */
-var getColorByPos = function ( pos, colorData, transparentColor ) {
-	var x = clamp( pos.x, 1, colorData.width - 2 );
-	var y = clamp( pos.y, 1, colorData.height - 2 );
-	var index = ( ( x | 0 ) + ( y | 0 ) * colorData.width ) << 2;
-
-	if ( index >= colorData.data.length ) {
-		index = colorData.data.length - 5;
-	}
-
-	var alpha = colorData.data[index + 3] / 255;
-
-	// Return RGBA color object
-	return ( transparentColor && alpha === 0 ) ? transparentColor : {
-		r: colorData.data[index],
-		g: colorData.data[index + 1],
-		b: colorData.data[index + 2],
-		a: alpha
-	};
-};
-
-/**
- * Get polygon's center point
- * @param  {Object} polygon Polygon object
- * @return {Object}         Point coordinates {x,y}
- */
-var polygonCenter = function (polygon) {
-	return {
-		x: ( polygon.a.x + polygon.b.x + polygon.c.x ) * 0.33333,
-		y: ( polygon.a.y + polygon.b.y + polygon.c.y ) * 0.33333
-	};
-};
-
-/**
- * Is color transparent ?
- * @param  {Object} color Color object
- * @return {Boolean}      Is transparent?
- */
-var isTransparent = function (color) {
-	return color.a === 0;
-};
-
-var addColorToPolygons = function ( polygons, colorData, params ) {
-	var fill = params.fill;
-	var stroke = params.stroke;
-	var strokeWidth = params.strokeWidth;
-	var lineJoin = params.lineJoin;
-	var transparentColor = params.transparentColor;
-	var fillColor = typeof fill === 'string' ? fill : false;
-	var strokeColor = typeof stroke === 'string' ? stroke : false;
-
-	/**
-	 * Color override logic
-	 * @param  {Object} color    Color object
-	 * @param  {String} override Override color (fillColor/strokeColor)
-	 * @return {String}          CSS formatted color (rgba,..)
-	 */
-	var getColor = function ( color, override ) {
-		var t = ( isTransparent(color) && transparentColor );	// Color is transparent, and transparentColor override is defined
-		var c = t ? transparentColor : color;
-		return ( override && !t ) ? override : toRGBA( c );		// Priority: transparentColor -> override -> supplied color
-	};
-
-	polygons.forEach( function (polygon) {
-		var color = getColorByPos( polygonCenter( polygon ), colorData );
-
-		if ( fill ) {
-			polygon.fill = getColor( color, fillColor );
-		}
-
-		if ( stroke ) {
-			polygon.strokeColor = getColor(color, strokeColor);
-			polygon.strokeWidth = strokeWidth;
-			polygon.lineJoin = lineJoin;
-		}
-	} );
-
-	return polygons;
-};
-
-//  http://stackoverflow.com/a/9733420/229189
-var luminance = function (color) {
-	var a = [ color.r, color.g, color.b ].map( function (v) {
-		v /= 255;
-		return ( v <= 0.03928 ) ? v / 12.92 : Math.pow( ( ( v + 0.055 ) / 1.055 ), 2.4 );
-	} );
-
-	return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;
-};
-
-var distance = function ( a, b ) {
-	var dx = b.x - a.x;
-	var dy = b.y - a.y;
-
-	return Math.sqrt( ( dx * dx ) + ( dy * dy ) );
-};
-
-var addGradientsToPolygons = function ( polygons, colorData, params ) {
-	polygons.forEach( function (polygon) {
-		var data = { };
-
-		'abc'.split( '' ).forEach( function (key) {
-			var color = getColorByPos( polygon[key], colorData, params.transparentColor );
-			
-			data[key] = {
-				key: key,
-				color: color,
-				x: polygon[key].x,
-				y: polygon[key].y
-			};
-
-			data[key].luminance = luminance( data[key].color );
-
-			var otherKeys = 'abc'.replace( key, '' ).split( '' );
-
-			data[key].median = {
-				x: ( polygon[otherKeys[0]].x + polygon[otherKeys[1]].x ) / 2,
-				y: ( polygon[otherKeys[0]].y + polygon[otherKeys[1]].y ) / 2
-			};
-
-			data[key].medianColor = getColorByPos( data[key].median, colorData, params.transparentColor );
-			data[key].medianLuminance = luminance( data[key].medianColor );
-		} );
-
-		// sort by axis of most difference in luminance
-		var pointsByDeltaInLuminance = [ data.a, data.b, data.c ].sort( function ( u, v ) {
-			return Math.abs( u.luminance - u.medianLuminance ) - Math.abs( v.luminance - v.medianLuminance );
-		} );
-
-		var pointWithMostDeltaInLuminance = pointsByDeltaInLuminance[0];
-		var startPoint = pointsByDeltaInLuminance[0];
-		var endPoint = pointWithMostDeltaInLuminance.median;
-
-		var gradienStopPositions = [ startPoint ];
-
-		var startToEndDistance = distance( startPoint, endPoint );
-
-		for ( var i = 1, len = params.gradientStops - 2; i < len; i++ ) {
-			var pointDistance = i * ( startToEndDistance / params.gradientStops );
-			var pointPercent = pointDistance / startToEndDistance;
-			
-			var point = {
-				x: startPoint.x + pointPercent * ( endPoint.x - startPoint.x ), 
-				y: startPoint.y + pointPercent * ( endPoint.y - startPoint.y )
-			};
-
-			gradienStopPositions.push( point );
-		}
-
-		gradienStopPositions.push( endPoint );
-
-		polygon.gradient = {
-			x1: pointWithMostDeltaInLuminance.x,
-			y1: pointWithMostDeltaInLuminance.y,
-			x2: pointWithMostDeltaInLuminance.median.x,
-			y2: pointWithMostDeltaInLuminance.median.y,
-			colors: gradienStopPositions.map( function (pos) {
-				return getColorByPos( pos, colorData, params.transparentColor );
-			} )
-		};
-
-		if ( params.stroke ) {
-			polygon.strokeWidth = params.strokeWidth;
-			polygon.lineJoin = params.lineJoin;
-		}
-
-		data = null;
-	} );
-
-	return polygons;
-};
-
-/**
- * Filter polygons with transparent color
- * @param  {Array} polygons    Polygons array
- * @param  {Object} colorData  Color data
- * @return {Array}             Filtered polygons array
- */
-var filterTransparentPolygons = function ( polygons, colorData ) {
-	return polygons.filter( function (polygon) {
-		var color = getColorByPos( polygonCenter( polygon ), colorData );
-		return ! isTransparent( color );
-	});
-};
-
-var imageDataToPolygons = function ( imageData, params ) {
-	if ( isImageData( imageData ) ) {
-		var imageSize = { width: imageData.width, height: imageData.height };
-		var tmpImageData = copyImageData( imageData );
-		var colorImageData = copyImageData( imageData );
-		var blurredImageData = stackblur( tmpImageData, 0, 0, imageSize.width, imageSize.height, params.blur );
-		var greyscaleImageData = greyscale( blurredImageData );
-		var edgesImageData = sobel( greyscaleImageData ).toImageData();
-		var edgePoints = getEdgePoints( edgesImageData, params.threshold );
-		var edgeVertices = getVerticesFromPoints( edgePoints, params.vertexCount, params.accuracy, imageSize.width, imageSize.height );
-		var polygons = delaunay_2( edgeVertices );
-		
-		polygons = addBoundingBoxesToPolygons( polygons );
-		
-		if ( ! params.transparentColor ) {
-			polygons = filterTransparentPolygons( polygons, colorImageData );
-		}
-		
-		if ( params.fill === true && params.gradients === true ) {
-			polygons = addGradientsToPolygons( polygons, colorImageData, params );
-		} else {
-			polygons = addColorToPolygons( polygons, colorImageData, params );
-		}
-
-		return polygons;
-	} else {
-		throw new Error( "Can't work with the imageData provided. It seems to be corrupt." );
-		return;
-	}
-};
-
-// import work from 'webworkify';
-// import triangulationWorker from './workers/triangulationWorker'
-
-// constructing an object that allows for a chained interface.
-// for example stuff like:
-// 
-// triangulate( params )
-//     .fromImage( img )
-//     .toImageData()
-// 
-// etc...
-
-var browser = function ( params ) {
-	params = sanitizeInput( params );
-
-	var isInputSync = false;
-	var isOutputSync = false;
-
-	var worker = new Worker( URL.createObjectURL(new Blob(["var commonjsGlobal = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};\n\n\n\n\n\nfunction createCommonjsModule(fn, module) {\n\treturn module = { exports: {} }, fn(module, module.exports), module.exports;\n}\n\nvar delaunay = createCommonjsModule(function (module) {\nfunction Triangle(a, b, c) {\n  this.a = a;\n  this.b = b;\n  this.c = c;\n\n  var A = b.x - a.x,\n      B = b.y - a.y,\n      C = c.x - a.x,\n      D = c.y - a.y,\n      E = A * (a.x + b.x) + B * (a.y + b.y),\n      F = C * (a.x + c.x) + D * (a.y + c.y),\n      G = 2 * (A * (c.y - b.y) - B * (c.x - b.x)),\n      minx, miny, dx, dy;\n\n  /* If the points of the triangle are collinear, then just find the\n   * extremes and use the midpoint as the center of the circumcircle. */\n  if(Math.abs(G) < 0.000001) {\n    minx = Math.min(a.x, b.x, c.x);\n    miny = Math.min(a.y, b.y, c.y);\n    dx   = (Math.max(a.x, b.x, c.x) - minx) * 0.5;\n    dy   = (Math.max(a.y, b.y, c.y) - miny) * 0.5;\n\n    this.x = minx + dx;\n    this.y = miny + dy;\n    this.r = dx * dx + dy * dy;\n  }\n\n  else {\n    this.x = (D*E - B*F) / G;\n    this.y = (A*F - C*E) / G;\n    dx = this.x - a.x;\n    dy = this.y - a.y;\n    this.r = dx * dx + dy * dy;\n  }\n}\n\nTriangle.prototype.draw = function(ctx) {\n  ctx.beginPath();\n  ctx.moveTo(this.a.x, this.a.y);\n  ctx.lineTo(this.b.x, this.b.y);\n  ctx.lineTo(this.c.x, this.c.y);\n  ctx.closePath();\n  ctx.stroke();\n};\n\nfunction byX(a, b) {\n  return b.x - a.x\n}\n\nfunction dedup(edges) {\n  var j = edges.length,\n      a, b, i, m, n;\n\n  outer: while(j) {\n    b = edges[--j];\n    a = edges[--j];\n    i = j;\n    while(i) {\n      n = edges[--i];\n      m = edges[--i];\n      if((a === m && b === n) || (a === n && b === m)) {\n        edges.splice(j, 2);\n        edges.splice(i, 2);\n        j -= 2;\n        continue outer\n      }\n    }\n  }\n}\n\nfunction triangulate(vertices) {\n  /* Bail if there aren't enough vertices to form any triangles. */\n  if(vertices.length < 3)\n    { return [] }\n\n  /* Ensure the vertex array is in order of descending X coordinate\n   * (which is needed to ensure a subquadratic runtime), and then find\n   * the bounding box around the points. */\n  vertices.sort(byX);\n\n  var i    = vertices.length - 1,\n      xmin = vertices[i].x,\n      xmax = vertices[0].x,\n      ymin = vertices[i].y,\n      ymax = ymin;\n\n  while(i--) {\n    if(vertices[i].y < ymin) { ymin = vertices[i].y; }\n    if(vertices[i].y > ymax) { ymax = vertices[i].y; }\n  }\n\n  /* Find a supertriangle, which is a triangle that surrounds all the\n   * vertices. This is used like something of a sentinel value to remove\n   * cases in the main algorithm, and is removed before we return any\n   * results.\n   *\n   * Once found, put it in the \"open\" list. (The \"open\" list is for\n   * triangles who may still need to be considered; the \"closed\" list is\n   * for triangles which do not.) */\n  var dx     = xmax - xmin,\n      dy     = ymax - ymin,\n      dmax   = (dx > dy) ? dx : dy,\n      xmid   = (xmax + xmin) * 0.5,\n      ymid   = (ymax + ymin) * 0.5,\n      open   = [\n        new Triangle(\n          {x: xmid - 20 * dmax, y: ymid -      dmax, __sentinel: true},\n          {x: xmid            , y: ymid + 20 * dmax, __sentinel: true},\n          {x: xmid + 20 * dmax, y: ymid -      dmax, __sentinel: true}\n        )\n      ],\n      closed = [],\n      edges = [],\n      j, a, b;\n\n  /* Incrementally add each vertex to the mesh. */\n  i = vertices.length;\n  while(i--) {\n    /* For each open triangle, check to see if the current point is\n     * inside it's circumcircle. If it is, remove the triangle and add\n     * it's edges to an edge list. */\n    edges.length = 0;\n    j = open.length;\n    while(j--) {\n      /* If this point is to the right of this triangle's circumcircle,\n       * then this triangle should never get checked again. Remove it\n       * from the open list, add it to the closed list, and skip. */\n      dx = vertices[i].x - open[j].x;\n      if(dx > 0 && dx * dx > open[j].r) {\n        closed.push(open[j]);\n        open.splice(j, 1);\n        continue\n      }\n\n      /* If not, skip this triangle. */\n      dy = vertices[i].y - open[j].y;\n      if(dx * dx + dy * dy > open[j].r)\n        { continue }\n\n      /* Remove the triangle and add it's edges to the edge list. */\n      edges.push(\n        open[j].a, open[j].b,\n        open[j].b, open[j].c,\n        open[j].c, open[j].a\n      );\n      open.splice(j, 1);\n    }\n\n    /* Remove any doubled edges. */\n    dedup(edges);\n\n    /* Add a new triangle for each edge. */\n    j = edges.length;\n    while(j) {\n      b = edges[--j];\n      a = edges[--j];\n      open.push(new Triangle(a, b, vertices[i]));\n    }\n  }\n\n  /* Copy any remaining open triangles to the closed list, and then\n   * remove any triangles that share a vertex with the supertriangle. */\n  Array.prototype.push.apply(closed, open);\n\n  i = closed.length;\n  while(i--)\n    { if(closed[i].a.__sentinel ||\n       closed[i].b.__sentinel ||\n       closed[i].c.__sentinel)\n      { closed.splice(i, 1); } }\n\n  /* Yay, we're done! */\n  return closed\n}\n\n{\n    module.exports = {\n        Triangle: Triangle,\n        triangulate: triangulate\n    };\n}\n});\n\nvar delaunay_2 = delaunay.triangulate;\n\nvar sobel = createCommonjsModule(function (module, exports) {\n(function(root) {\n  'use strict';\n\n  function Sobel(imageData) {\n    if (!(this instanceof Sobel)) {\n      return new Sobel(imageData);\n    }\n\n    var width = imageData.width;\n    var height = imageData.height;\n\n    var kernelX = [\n      [-1,0,1],\n      [-2,0,2],\n      [-1,0,1]\n    ];\n\n    var kernelY = [\n      [-1,-2,-1],\n      [0,0,0],\n      [1,2,1]\n    ];\n\n    var sobelData = [];\n    var grayscaleData = [];\n\n    function bindPixelAt(data) {\n      return function(x, y, i) {\n        i = i || 0;\n        return data[((width * y) + x) * 4 + i];\n      };\n    }\n\n    var data = imageData.data;\n    var pixelAt = bindPixelAt(data);\n    var x, y;\n\n    for (y = 0; y < height; y++) {\n      for (x = 0; x < width; x++) {\n        var r = pixelAt(x, y, 0);\n        var g = pixelAt(x, y, 1);\n        var b = pixelAt(x, y, 2);\n\n        var avg = (r + g + b) / 3;\n        grayscaleData.push(avg, avg, avg, 255);\n      }\n    }\n\n    pixelAt = bindPixelAt(grayscaleData);\n\n    for (y = 0; y < height; y++) {\n      for (x = 0; x < width; x++) {\n        var pixelX = (\n            (kernelX[0][0] * pixelAt(x - 1, y - 1)) +\n            (kernelX[0][1] * pixelAt(x, y - 1)) +\n            (kernelX[0][2] * pixelAt(x + 1, y - 1)) +\n            (kernelX[1][0] * pixelAt(x - 1, y)) +\n            (kernelX[1][1] * pixelAt(x, y)) +\n            (kernelX[1][2] * pixelAt(x + 1, y)) +\n            (kernelX[2][0] * pixelAt(x - 1, y + 1)) +\n            (kernelX[2][1] * pixelAt(x, y + 1)) +\n            (kernelX[2][2] * pixelAt(x + 1, y + 1))\n        );\n\n        var pixelY = (\n          (kernelY[0][0] * pixelAt(x - 1, y - 1)) +\n          (kernelY[0][1] * pixelAt(x, y - 1)) +\n          (kernelY[0][2] * pixelAt(x + 1, y - 1)) +\n          (kernelY[1][0] * pixelAt(x - 1, y)) +\n          (kernelY[1][1] * pixelAt(x, y)) +\n          (kernelY[1][2] * pixelAt(x + 1, y)) +\n          (kernelY[2][0] * pixelAt(x - 1, y + 1)) +\n          (kernelY[2][1] * pixelAt(x, y + 1)) +\n          (kernelY[2][2] * pixelAt(x + 1, y + 1))\n        );\n\n        var magnitude = Math.sqrt((pixelX * pixelX) + (pixelY * pixelY))>>>0;\n\n        sobelData.push(magnitude, magnitude, magnitude, 255);\n      }\n    }\n\n    var clampedArray = sobelData;\n\n    if (typeof Uint8ClampedArray === 'function') {\n      clampedArray = new Uint8ClampedArray(sobelData);\n    }\n\n    clampedArray.toImageData = function() {\n      return Sobel.toImageData(clampedArray, width, height);\n    };\n\n    return clampedArray;\n  }\n\n  Sobel.toImageData = function toImageData(data, width, height) {\n    if (typeof ImageData === 'function' && Object.prototype.toString.call(data) === '[object Uint16Array]') {\n      return new ImageData(data, width, height);\n    } else {\n      if (typeof window === 'object' && typeof window.document === 'object') {\n        var canvas = document.createElement('canvas');\n\n        if (typeof canvas.getContext === 'function') {\n          var context = canvas.getContext('2d');\n          var imageData = context.createImageData(width, height);\n          imageData.data.set(data);\n          return imageData;\n        } else {\n          return new FakeImageData(data, width, height);\n        }\n      } else {\n        return new FakeImageData(data, width, height);\n      }\n    }\n  };\n\n  function FakeImageData(data, width, height) {\n    return {\n      width: width,\n      height: height,\n      data: data\n    };\n  }\n\n  {\n    if ('object' !== 'undefined' && module.exports) {\n      exports = module.exports = Sobel;\n    }\n    exports.Sobel = Sobel;\n  }\n\n})(commonjsGlobal);\n});\n\nvar isImageData = function (imageData) {\n\treturn (\n\t\timageData && \n\t\ttypeof imageData.width === 'number' &&\n\t\ttypeof imageData.height === 'number' &&\n\t\timageData.data &&\n\t\ttypeof imageData.data.length === 'number' &&\n\t\ttypeof imageData.data === 'object'\n\t);\n};\n\nvar Canvas$1 = function Canvas ( width, height ) {\n\tif ( width === void 0 ) width = 300;\n\tif ( height === void 0 ) height = 150;\n\n\tif ( typeof window === 'undefined' ) {\n\t\tthis.canvasEl = { width: width, height: height };\n\t\tthis.ctx = null;\n\t} else {\n\t\tthis.canvasEl = document.createElement( 'canvas' );\n\t\tthis.canvasEl.width = width;\n\t\tthis.canvasEl.height = height;\n\t\tthis.ctx = this.canvasEl.getContext( '2d' );\n\t} \n};\n\nvar prototypeAccessors = { width: { configurable: true },height: { configurable: true } };\n\nCanvas$1.prototype.getContext = function getContext () {\n\treturn this.ctx;\n};\n\nCanvas$1.prototype.toDataURL = function toDataURL ( type, encoderOptions, cb ) {\n\tif ( typeof cb === 'function' ) {\n\t\tcb( this.canvasEl.toDataURL( type, encoderOptions ) );\n\t} else {\n\t\treturn this.canvasEl.toDataURL( type, encoderOptions );\n\t}\n};\n\t\nprototypeAccessors.width.get = function () {\n\treturn this.canvasEl.width;\n};\n\t\nprototypeAccessors.width.set = function ( newWidth ) {\n\tthis.canvasEl.width = newWidth;\n};\n\nprototypeAccessors.height.get = function () {\n\treturn this.canvasEl.height;\n};\n\nprototypeAccessors.height.set = function ( newHeight ) {\n\tthis.canvasEl.height = newHeight;\n};\n\nObject.defineProperties( Canvas$1.prototype, prototypeAccessors );\n\nif ( typeof window !== 'undefined' ) {\n\tCanvas$1.Image = Image;\n}\n\n// import Canvas from 'canvas';\n// import Canvas from './browser.js';\n\nvar copyImageData = function (imageData) {\n\tif ( isImageData ( imageData ) ) {\n\t\tif ( typeof Uint8ClampedArray === 'undefined' ) {\n\t\t\tif ( typeof window === 'undefined' ) {\n\t\t\t\tthrow new Error( \"Can't copy imageData in webworker without Uint8ClampedArray support.\" );\n\t\t\t\treturn imageData;\n\t\t\t} else {\n\t\t\t\treturn copyImageDataWithCanvas( imageData );\n\t\t\t}\n\t\t} else {\n\t\t\tvar clampedArray = new Uint8ClampedArray( imageData.data );\n\n\t\t\tif ( typeof ImageData === 'undefined' ) {\n\t\t\t\t// http://stackoverflow.com/a/15238036/229189\n\t\t\t\treturn {\n\t\t\t\t\twidth: imageData.width,\n\t\t\t\t\theight: imageData.height,\n\t\t\t\t\tdata: clampedArray\n\t\t\t\t};\n\t\t\t} else {\n\t\t\t\t// http://stackoverflow.com/a/15908922/229189#comment57192591_15908922\n\t\t\t\tvar result;\n\n\t\t\t\ttry {\n\t\t\t\t\tresult = new ImageData( clampedArray, imageData.width, imageData.height );\n\t\t\t\t} catch ( err ) {\n\t\t\t\t\tif ( typeof window === 'undefined' ) {\n\t\t\t\t\t\tthrow new Error( \"Can't copy imageData in webworker without proper ImageData() support.\" );\n\t\t\t\t\t\tresult = imageData;\n\t\t\t\t\t} else {\n\t\t\t\t\t\tresult = copyImageDataWithCanvas( imageData );\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\treturn result;\n\t\t\t}\n\t\t}\n\t} else {\n\t\tthrow new Error( 'Given imageData object is not useable.' );\n\t\treturn;\n\t}\n};\n\n// http://stackoverflow.com/a/11918126/229189\nfunction copyImageDataWithCanvas ( imageData ) {\n\tvar canvas = new Canvas$1( imageData.width, imageData.height );\n\tvar ctx = canvas.getContext( '2d' );\n\n\tctx.putImageData( imageData, 0, 0 );\n\t\t\t\t\n\treturn ctx.getImageData( 0, 0, imageData.width, imageData.height );\n}\n\n/*\n    StackBlur - a fast almost Gaussian Blur For Canvas\n\n    Version:     0.5\n    Author:        Mario Klingemann\n    Contact:     mario@quasimondo.com\n    Website:    http://www.quasimondo.com/StackBlurForCanvas\n    Twitter:    @quasimondo\n\n    In case you find this class useful - especially in commercial projects -\n    I am not totally unhappy for a small donation to my PayPal account\n    mario@quasimondo.de\n\n    Or support me on flattr:\n    https://flattr.com/thing/72791/StackBlur-a-fast-almost-Gaussian-Blur-Effect-for-CanvasJavascript\n\n    Copyright (c) 2010 Mario Klingemann\n\n    Permission is hereby granted, free of charge, to any person\n    obtaining a copy of this software and associated documentation\n    files (the \"Software\"), to deal in the Software without\n    restriction, including without limitation the rights to use,\n    copy, modify, merge, publish, distribute, sublicense, and/or sell\n    copies of the Software, and to permit persons to whom the\n    Software is furnished to do so, subject to the following\n    conditions:\n\n    The above copyright notice and this permission notice shall be\n    included in all copies or substantial portions of the Software.\n\n    THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES\n    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n    NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT\n    HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,\n    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING\n    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR\n    OTHER DEALINGS IN THE SOFTWARE.\n    */\n\nvar mul_table = [\n    512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,\n    454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,\n    482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,\n    437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,\n    497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,\n    320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,\n    446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,\n    329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,\n    505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,\n    399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,\n    324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,\n    268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,\n    451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,\n    385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,\n    332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,\n    289,287,285,282,280,278,275,273,271,269,267,265,263,261,259];\n\n\nvar shg_table = [\n    9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17,\n    17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19,\n    19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20,\n    20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21,\n    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21,\n    21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22,\n    22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22,\n    22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23,\n    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,\n    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,\n    23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23,\n    23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,\n    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,\n    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,\n    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24,\n    24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 ];\n\nfunction BlurStack () {\n\tthis.r = 0;\n\tthis.g = 0;\n\tthis.b = 0;\n\tthis.a = 0;\n\tthis.next = null;\n}\n\nvar stackblur = function ( imageData, top_x, top_y, width, height, radius ) {\n\tvar pixels = imageData.data;\n\n\tvar x, y, i, p, yp, yi, yw, r_sum, g_sum, b_sum, a_sum,\n\t\tr_out_sum, g_out_sum, b_out_sum, a_out_sum,\n\t\tr_in_sum, g_in_sum, b_in_sum, a_in_sum,\n\t\tpr, pg, pb, pa, rbs;\n\n\tvar div = radius + radius + 1;\n\tvar widthMinus1  = width - 1;\n\tvar heightMinus1 = height - 1;\n\tvar radiusPlus1  = radius + 1;\n\tvar sumFactor = radiusPlus1 * ( radiusPlus1 + 1 ) / 2;\n\n\tvar stackStart = new BlurStack();\n\tvar stack = stackStart;\n\t\n\tfor ( i = 1; i < div; i++ ) {\n\t\tstack = stack.next = new BlurStack();\n\t\tif (i == radiusPlus1) { var stackEnd = stack; }\n\t}\n\tstack.next = stackStart;\n\t\n\tvar stackIn = null;\n\tvar stackOut = null;\n\n\tyw = yi = 0;\n\n\tvar mul_sum = mul_table[radius];\n\tvar shg_sum = shg_table[radius];\n\n\tfor ( y = 0; y < height; y++ ) {\n\t\tr_in_sum = g_in_sum = b_in_sum = a_in_sum = r_sum = g_sum = b_sum = a_sum = 0;\n\n\t\tr_out_sum = radiusPlus1 * ( pr = pixels[yi] );\n\t\tg_out_sum = radiusPlus1 * ( pg = pixels[yi+1] );\n\t\tb_out_sum = radiusPlus1 * ( pb = pixels[yi+2] );\n\t\ta_out_sum = radiusPlus1 * ( pa = pixels[yi+3] );\n\n\t\tr_sum += sumFactor * pr;\n\t\tg_sum += sumFactor * pg;\n\t\tb_sum += sumFactor * pb;\n\t\ta_sum += sumFactor * pa;\n\n\t\tstack = stackStart;\n\n\t\tfor ( i = 0; i < radiusPlus1; i++ ) {\n\t\t\tstack.r = pr;\n\t\t\tstack.g = pg;\n\t\t\tstack.b = pb;\n\t\t\tstack.a = pa;\n\t\t\tstack = stack.next;\n\t\t}\n\n\t\tfor ( i = 1; i < radiusPlus1; i++ ) {\n\t\t\tp = yi + ( ( widthMinus1 < i ? widthMinus1 : i ) << 2 );\n\t\t\tr_sum += ( stack.r = ( pr = pixels[p] ) ) * ( rbs = radiusPlus1 - i );\n\t\t\tg_sum += ( stack.g = ( pg = pixels[p+1] ) ) * rbs;\n\t\t\tb_sum += ( stack.b = ( pb = pixels[p+2] ) ) * rbs;\n\t\t\ta_sum += ( stack.a = ( pa = pixels[p+3] ) ) * rbs;\n\n\t\t\tr_in_sum += pr;\n\t\t\tg_in_sum += pg;\n\t\t\tb_in_sum += pb;\n\t\t\ta_in_sum += pa;\n\n\t\t\tstack = stack.next;\n\t\t}\n\n\n\t\tstackIn = stackStart;\n\t\tstackOut = stackEnd;\n\n\t\tfor (x = 0; x < width; x++) {\n\t\t\tpixels[yi+3] = pa = (a_sum * mul_sum) >> shg_sum;\n\t\t\t\n\t\t\tif (pa != 0) {\n\t\t\t\tpa = 255 / pa;\n\t\t\t\tpixels[yi]   = ( ( r_sum * mul_sum ) >> shg_sum ) * pa;\n\t\t\t\tpixels[yi+1] = ( ( g_sum * mul_sum ) >> shg_sum ) * pa;\n\t\t\t\tpixels[yi+2] = ( ( b_sum * mul_sum ) >> shg_sum ) * pa;\n\t\t\t} else {\n\t\t\t\tpixels[yi] = pixels[yi+1] = pixels[yi+2] = 0;\n\t\t\t}\n\n\t\t\tr_sum -= r_out_sum;\n\t\t\tg_sum -= g_out_sum;\n\t\t\tb_sum -= b_out_sum;\n\t\t\ta_sum -= a_out_sum;\n\n\t\t\tr_out_sum -= stackIn.r;\n\t\t\tg_out_sum -= stackIn.g;\n\t\t\tb_out_sum -= stackIn.b;\n\t\t\ta_out_sum -= stackIn.a;\n\n\t\t\tp =  ( yw + ( ( p = x + radius + 1 ) < widthMinus1 ? p : widthMinus1 ) ) << 2;\n\n\t\t\tr_in_sum += ( stackIn.r = pixels[p] );\n\t\t\tg_in_sum += ( stackIn.g = pixels[p+1] );\n\t\t\tb_in_sum += ( stackIn.b = pixels[p+2] );\n\t\t\ta_in_sum += ( stackIn.a = pixels[p+3] );\n\n\t\t\tr_sum += r_in_sum;\n\t\t\tg_sum += g_in_sum;\n\t\t\tb_sum += b_in_sum;\n\t\t\ta_sum += a_in_sum;\n\n\t\t\tstackIn = stackIn.next;\n\n\t\t\tr_out_sum += ( pr = stackOut.r );\n\t\t\tg_out_sum += ( pg = stackOut.g );\n\t\t\tb_out_sum += ( pb = stackOut.b );\n\t\t\ta_out_sum += ( pa = stackOut.a );\n\n\t\t\tr_in_sum -= pr;\n\t\t\tg_in_sum -= pg;\n\t\t\tb_in_sum -= pb;\n\t\t\ta_in_sum -= pa;\n\n\t\t\tstackOut = stackOut.next;\n\n\t\t\tyi += 4;\n\t\t}\n\t\tyw += width;\n\t}\n\n\n\tfor ( x = 0; x < width; x++ ) {\n\t\tg_in_sum = b_in_sum = a_in_sum = r_in_sum = g_sum = b_sum = a_sum = r_sum = 0;\n\n\t\tyi = x << 2;\n\t\tr_out_sum = radiusPlus1 * ( pr = pixels[yi] );\n\t\tg_out_sum = radiusPlus1 * ( pg = pixels[yi+1] );\n\t\tb_out_sum = radiusPlus1 * ( pb = pixels[yi+2] );\n\t\ta_out_sum = radiusPlus1 * ( pa = pixels[yi+3] );\n\n\t\tr_sum += sumFactor * pr;\n\t\tg_sum += sumFactor * pg;\n\t\tb_sum += sumFactor * pb;\n\t\ta_sum += sumFactor * pa;\n\n\t\tstack = stackStart;\n\n\t\tfor ( i = 0; i < radiusPlus1; i++) {\n\t\t\tstack.r = pr;\n\t\t\tstack.g = pg;\n\t\t\tstack.b = pb;\n\t\t\tstack.a = pa;\n\t\t\tstack = stack.next;\n\t\t}\n\n\t\typ = width;\n\n\t\tfor ( i = 1; i <= radius; i++ ) {\n\t\t\tyi = ( yp + x ) << 2;\n\n\t\t\tr_sum += ( stack.r = ( pr = pixels[yi] ) ) * (rbs = radiusPlus1 - i);\n\t\t\tg_sum += ( stack.g = ( pg = pixels[yi+1] ) ) * rbs;\n\t\t\tb_sum += ( stack.b = ( pb = pixels[yi+2] ) ) * rbs;\n\t\t\ta_sum += ( stack.a = ( pa = pixels[yi+3] ) ) * rbs;\n\n\t\t\tr_in_sum += pr;\n\t\t\tg_in_sum += pg;\n\t\t\tb_in_sum += pb;\n\t\t\ta_in_sum += pa;\n\n\t\t\tstack = stack.next;\n\n\t\t\tif ( i < heightMinus1 ) {\n\t\t\t\typ += width;\n\t\t\t}\n\t\t}\n\n\t\tyi = x;\n\t\tstackIn = stackStart;\n\t\tstackOut = stackEnd;\n\n\t\tfor ( y = 0; y < height; y++ ) {\n\t\t\tp = yi << 2;\n\t\t\tpixels[p+3] = pa = ( a_sum * mul_sum ) >> shg_sum;\n\t\t\t\n\t\t\tif ( pa > 0 ) {\n\t\t\t\tpa = 255 / pa;\n\t\t\t\tpixels[p]   = ( ( r_sum * mul_sum ) >> shg_sum) * pa;\n\t\t\t\tpixels[p+1] = ( ( g_sum * mul_sum ) >> shg_sum) * pa;\n\t\t\t\tpixels[p+2] = ( ( b_sum * mul_sum ) >> shg_sum) * pa;\n\t\t\t} else {\n\t\t\t\tpixels[p] = pixels[p+1] = pixels[p+2] = 0;\n\t\t\t}\n\n\t\t\tr_sum -= r_out_sum;\n\t\t\tg_sum -= g_out_sum;\n\t\t\tb_sum -= b_out_sum;\n\t\t\ta_sum -= a_out_sum;\n\n\t\t\tr_out_sum -= stackIn.r;\n\t\t\tg_out_sum -= stackIn.g;\n\t\t\tb_out_sum -= stackIn.b;\n\t\t\ta_out_sum -= stackIn.a;\n\n\t\t\tp = ( x + ( ( ( p = y + radiusPlus1 ) < heightMinus1 ? p : heightMinus1 ) * width ) ) << 2;\n\n\t\t\tr_sum += ( r_in_sum += ( stackIn.r = pixels[p] ) );\n\t\t\tg_sum += ( g_in_sum += ( stackIn.g = pixels[p+1] ) );\n\t\t\tb_sum += ( b_in_sum += ( stackIn.b = pixels[p+2] ) );\n\t\t\ta_sum += ( a_in_sum += ( stackIn.a = pixels[p+3] ) );\n\n\t\t\tstackIn = stackIn.next;\n\n\t\t\tr_out_sum += ( pr = stackOut.r );\n\t\t\tg_out_sum += ( pg = stackOut.g );\n\t\t\tb_out_sum += ( pb = stackOut.b );\n\t\t\ta_out_sum += ( pa = stackOut.a );\n\n\t\t\tr_in_sum -= pr;\n\t\t\tg_in_sum -= pg;\n\t\t\tb_in_sum -= pb;\n\t\t\ta_in_sum -= pa;\n\n\t\t\tstackOut = stackOut.next;\n\n\t\t\tyi += width;\n\t\t}\n\t}\n\n\treturn imageData;\n};\n\nvar greyscale = function (imageData) {\n\tvar len = imageData.data.length;\n\tvar brightness;\n\n\tfor ( var i = 0; i < len; i += 4 ) {\n\t\tbrightness = 0.34 * imageData.data[i] + 0.5 * imageData.data[i + 1] + 0.16 * imageData.data[i + 2];\n\n\t\timageData.data[i] = brightness;\n\t\timageData.data[i + 1] = brightness;\n\t\timageData.data[i + 2] = brightness;\n\t}\n\t\t\n\treturn imageData;\n};\n\n// most parts taken from http://jsdo.it/akm2/xoYx\n// (starting line 293++)\nvar getEdgePoints = function ( imageData, threshold ) {\n\t// only check every 2nd pixel in imageData to save some time.\n\tvar multiplier = 2;\n\tvar width = imageData.width;\n\tvar height = imageData.height;\n\tvar data = imageData.data;\n\tvar points = [ ];\n\tvar x, y, row, col, sx, sy, step, sum, total;\n\n\tfor ( y = 0; y < height; y += multiplier ) {\n\t\tfor ( x = 0; x < width; x += multiplier ) {\n\t\t\tsum = total = 0;\n\n\t\t\tfor ( row = -1; row <= 1; row++ ) {\n\t\t\t\tsy = y + row;\n\t\t\t\tstep = sy * width;\n\n\t\t\t\tif ( sy >= 0 && sy < height ) {\n\t\t\t\t\tfor ( col = -1; col <= 1; col++ ) {\n\t\t\t\t\t\tsx = x + col;\n\n\t\t\t\t\t\tif ( sx >= 0 && sx < width ) {\n\t\t\t\t\t\t\tsum += data[( sx + step ) << 2];\n\t\t\t\t\t\t\ttotal++;\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif ( total ) {\n\t\t\t\tsum /= total;\n\t\t\t}\n\n\t\t\tif ( sum > threshold ) {\n\t\t\t\tpoints.push( { x: x, y: y } );\n\t\t\t}\n\t\t}\n\t}\n\n\treturn points;\n};\n\nvar clamp = function ( value, min, max ) {\n\treturn value < min ? min : value > max ? max : value;\n};\n\nfunction addVertex ( x, y, hash ) {\n\tvar resultKey = x + '|' + y;\n\n\tif ( ! hash[resultKey] ) {\n\t\thash[resultKey] = { x: x, y: y };\n\t}\n\n\tresultKey = null;\n}\n\nvar getVerticesFromPoints = function ( points, maxPointCount, accuracy, width, height ) {\n\t// using hash for all points to make sure we have a set of unique vertices.\n\tvar resultHash = {};\n\n\t// use 25% of max point count to create a background grid.\n\t// this avoids having too many \"big\" triangles in areas of the image with low contrast \n\t// next to very small ones in areas with high contrast\n\t// for every other row, start the x value at > 0, so the grid doesn't look too regular\n\tvar gridPointCount = Math.max( ~~( maxPointCount * ( 1 - accuracy ) ), 5 );\n\n\t// http://stackoverflow.com/a/4107092/229189\n\tvar gridColumns = Math.round( Math.sqrt( gridPointCount ) );\n\tvar gridRows = Math.round( Math.ceil( gridPointCount / gridColumns ) );\n\t\n\tvar xIncrement = ~~( width / gridColumns );\n\tvar yIncrement = ~~( height / gridRows );\n\n\tvar rowIndex = 0;\n\tvar startX = 0;\n\n\tvar x = 0;\n\tvar y = 0;\n\n\tfor ( y = 0; y < height; y+= yIncrement ){\n\t\trowIndex++;\n\n\t\tstartX = rowIndex % 2 === 0 ? ~~( xIncrement / 2 ) : 0; \n\n\t\tfor ( x = startX; x < width; x += xIncrement ) {\n\t\t\tif ( x < width && y < height ) {\n\t\t\t\t// \"distorting\" the grid a little bit so that the\n\t\t\t\t// background vertices don't appear to be on a straight line (which looks boring)\n\t\t\t\taddVertex(\n\t\t\t\t\t~~( x + ( Math.cos( y ) * ( yIncrement ) ) ),\n\t\t\t\t\t~~( y + ( Math.sin( x ) * ( xIncrement ) ) ),\n\t\t\t\t\tresultHash\n\t\t\t\t);\n\t\t\t}\n\t\t}\n\t}\n\t\n\t// add points in the corners\n\taddVertex( 0, 0, resultHash );\n\taddVertex( width - 1, 0, resultHash );\n\taddVertex( width - 1, height - 1, resultHash );\n\taddVertex( 0, height - 1, resultHash );\n\n\t// add points from all edge points\n\tvar remainingPointCount = maxPointCount - Object.keys( resultHash ).length;\n\tvar edgePointCount = points.length;\n\tvar increment = ~~( edgePointCount / remainingPointCount );\n\n\tif ( maxPointCount > 0 && increment > 0 ) {\n\t\tvar i = 0;\n\n\t\tfor ( i = 0; i < edgePointCount; i += increment ) {\n\t\t\taddVertex( points[i].x, points[i].y, resultHash );\n\t\t}\n\t}\n\n\tpoints = null;\n\n\treturn Object.keys( resultHash ).map( function (key) {\n\t\treturn resultHash[key];\n\t} );\n};\n\nvar getBoundingBox = function (points) {\n\tvar xMin = Infinity;\n\tvar xMax = -Infinity;\n\tvar yMin = Infinity;\n\tvar yMax = -Infinity;\n\n\tpoints.forEach( function (p) {\n\t\tif ( p.x < xMin ) {\n\t\t\txMin = p.x;\n\t\t}\n\n\t\tif ( p.y < yMin ) {\n\t\t\tyMin = p.y;\n\t\t}\n\n\t\tif ( p.x > xMax ) {\n\t\t\txMax = p.x;\n\t\t}\n\n\t\tif ( p.y > yMax ) {\n\t\t\tyMax = p.y;\n\t\t}\n\t} );\n\n\treturn {\n\t\tx: xMin,\n\t\ty: yMin,\n\t\twidth: xMax - xMin,\n\t\theight: yMax - yMin\n\t};\n};\n\nvar addBoundingBoxesToPolygons = function ( polygons, colorData, params ) {\n\tpolygons.forEach( function (polygon) {\n\t\tpolygon.boundingBox = getBoundingBox( [ polygon.a, polygon.b, polygon.c ] );\n\t} );\n\n\treturn polygons.filter( function (polygon) {\n\t\treturn polygon.boundingBox.width > 0 && polygon.boundingBox.height > 0;\n\t} );\n};\n\n/**\n * Get color object by position\n * @param  {Object} pos         {x,y} object\n * @param  {Object} colorData   Image color data object\n * @param  {Object} [transparentColor] (optional) RGBA color object. Used to set specific color to transparent pixels\n * @return {Object}             RGBA color object\n */\nvar getColorByPos = function ( pos, colorData, transparentColor ) {\n\tvar x = clamp( pos.x, 1, colorData.width - 2 );\n\tvar y = clamp( pos.y, 1, colorData.height - 2 );\n\tvar index = ( ( x | 0 ) + ( y | 0 ) * colorData.width ) << 2;\n\n\tif ( index >= colorData.data.length ) {\n\t\tindex = colorData.data.length - 5;\n\t}\n\n\tvar alpha = colorData.data[index + 3] / 255;\n\n\t// Return RGBA color object\n\treturn ( transparentColor && alpha === 0 ) ? transparentColor : {\n\t\tr: colorData.data[index],\n\t\tg: colorData.data[index + 1],\n\t\tb: colorData.data[index + 2],\n\t\ta: alpha\n\t};\n};\n\n/**\n * Get polygon's center point\n * @param  {Object} polygon Polygon object\n * @return {Object}         Point coordinates {x,y}\n */\nvar polygonCenter = function (polygon) {\n\treturn {\n\t\tx: ( polygon.a.x + polygon.b.x + polygon.c.x ) * 0.33333,\n\t\ty: ( polygon.a.y + polygon.b.y + polygon.c.y ) * 0.33333\n\t};\n};\n\n/**\n * Is color transparent ?\n * @param  {Object} color Color object\n * @return {Boolean}      Is transparent?\n */\nvar isTransparent = function (color) {\n\treturn color.a === 0;\n};\n\n// import objectAssign from 'object-assign'\nvar objectAssign = Object.assign;\n\n/**\n * Transform color object to rgb/a\n * @param  {Object} colorObj RGB(A) color object\n * @return {String}       \t rgba css string\n */\n\nvar toRGBA = function (colorObj) {\n\tvar c = objectAssign( { a: 1 }, colorObj );\t// rgb-to-rgba:  alpha is optionally set to 1\n\treturn (\"rgba(\" + (c.r) + \", \" + (c.g) + \", \" + (c.b) + \", \" + (c.a) + \")\")\n};\n\nvar addColorToPolygons = function ( polygons, colorData, params ) {\n\tvar fill = params.fill;\n\tvar stroke = params.stroke;\n\tvar strokeWidth = params.strokeWidth;\n\tvar lineJoin = params.lineJoin;\n\tvar transparentColor = params.transparentColor;\n\tvar fillColor = typeof fill === 'string' ? fill : false;\n\tvar strokeColor = typeof stroke === 'string' ? stroke : false;\n\n\t/**\n\t * Color override logic\n\t * @param  {Object} color    Color object\n\t * @param  {String} override Override color (fillColor/strokeColor)\n\t * @return {String}          CSS formatted color (rgba,..)\n\t */\n\tvar getColor = function ( color, override ) {\n\t\tvar t = ( isTransparent(color) && transparentColor );\t// Color is transparent, and transparentColor override is defined\n\t\tvar c = t ? transparentColor : color;\n\t\treturn ( override && !t ) ? override : toRGBA( c );\t\t// Priority: transparentColor -> override -> supplied color\n\t};\n\n\tpolygons.forEach( function (polygon) {\n\t\tvar color = getColorByPos( polygonCenter( polygon ), colorData );\n\n\t\tif ( fill ) {\n\t\t\tpolygon.fill = getColor( color, fillColor );\n\t\t}\n\n\t\tif ( stroke ) {\n\t\t\tpolygon.strokeColor = getColor(color, strokeColor);\n\t\t\tpolygon.strokeWidth = strokeWidth;\n\t\t\tpolygon.lineJoin = lineJoin;\n\t\t}\n\t} );\n\n\treturn polygons;\n};\n\n//  http://stackoverflow.com/a/9733420/229189\nvar luminance = function (color) {\n\tvar a = [ color.r, color.g, color.b ].map( function (v) {\n\t\tv /= 255;\n\t\treturn ( v <= 0.03928 ) ? v / 12.92 : Math.pow( ( ( v + 0.055 ) / 1.055 ), 2.4 );\n\t} );\n\n\treturn a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722;\n};\n\nvar distance = function ( a, b ) {\n\tvar dx = b.x - a.x;\n\tvar dy = b.y - a.y;\n\n\treturn Math.sqrt( ( dx * dx ) + ( dy * dy ) );\n};\n\nvar addGradientsToPolygons = function ( polygons, colorData, params ) {\n\tpolygons.forEach( function (polygon) {\n\t\tvar data = { };\n\n\t\t'abc'.split( '' ).forEach( function (key) {\n\t\t\tvar color = getColorByPos( polygon[key], colorData, params.transparentColor );\n\t\t\t\n\t\t\tdata[key] = {\n\t\t\t\tkey: key,\n\t\t\t\tcolor: color,\n\t\t\t\tx: polygon[key].x,\n\t\t\t\ty: polygon[key].y\n\t\t\t};\n\n\t\t\tdata[key].luminance = luminance( data[key].color );\n\n\t\t\tvar otherKeys = 'abc'.replace( key, '' ).split( '' );\n\n\t\t\tdata[key].median = {\n\t\t\t\tx: ( polygon[otherKeys[0]].x + polygon[otherKeys[1]].x ) / 2,\n\t\t\t\ty: ( polygon[otherKeys[0]].y + polygon[otherKeys[1]].y ) / 2\n\t\t\t};\n\n\t\t\tdata[key].medianColor = getColorByPos( data[key].median, colorData, params.transparentColor );\n\t\t\tdata[key].medianLuminance = luminance( data[key].medianColor );\n\t\t} );\n\n\t\t// sort by axis of most difference in luminance\n\t\tvar pointsByDeltaInLuminance = [ data.a, data.b, data.c ].sort( function ( u, v ) {\n\t\t\treturn Math.abs( u.luminance - u.medianLuminance ) - Math.abs( v.luminance - v.medianLuminance );\n\t\t} );\n\n\t\tvar pointWithMostDeltaInLuminance = pointsByDeltaInLuminance[0];\n\t\tvar startPoint = pointsByDeltaInLuminance[0];\n\t\tvar endPoint = pointWithMostDeltaInLuminance.median;\n\n\t\tvar gradienStopPositions = [ startPoint ];\n\n\t\tvar startToEndDistance = distance( startPoint, endPoint );\n\n\t\tfor ( var i = 1, len = params.gradientStops - 2; i < len; i++ ) {\n\t\t\tvar pointDistance = i * ( startToEndDistance / params.gradientStops );\n\t\t\tvar pointPercent = pointDistance / startToEndDistance;\n\t\t\t\n\t\t\tvar point = {\n\t\t\t\tx: startPoint.x + pointPercent * ( endPoint.x - startPoint.x ), \n\t\t\t\ty: startPoint.y + pointPercent * ( endPoint.y - startPoint.y )\n\t\t\t};\n\n\t\t\tgradienStopPositions.push( point );\n\t\t}\n\n\t\tgradienStopPositions.push( endPoint );\n\n\t\tpolygon.gradient = {\n\t\t\tx1: pointWithMostDeltaInLuminance.x,\n\t\t\ty1: pointWithMostDeltaInLuminance.y,\n\t\t\tx2: pointWithMostDeltaInLuminance.median.x,\n\t\t\ty2: pointWithMostDeltaInLuminance.median.y,\n\t\t\tcolors: gradienStopPositions.map( function (pos) {\n\t\t\t\treturn getColorByPos( pos, colorData, params.transparentColor );\n\t\t\t} )\n\t\t};\n\n\t\tif ( params.stroke ) {\n\t\t\tpolygon.strokeWidth = params.strokeWidth;\n\t\t\tpolygon.lineJoin = params.lineJoin;\n\t\t}\n\n\t\tdata = null;\n\t} );\n\n\treturn polygons;\n};\n\n/**\n * Filter polygons with transparent color\n * @param  {Array} polygons    Polygons array\n * @param  {Object} colorData  Color data\n * @return {Array}             Filtered polygons array\n */\nvar filterTransparentPolygons = function ( polygons, colorData ) {\n\treturn polygons.filter( function (polygon) {\n\t\tvar color = getColorByPos( polygonCenter( polygon ), colorData );\n\t\treturn ! isTransparent( color );\n\t});\n};\n\nvar imageDataToPolygons = function ( imageData, params ) {\n\tif ( isImageData( imageData ) ) {\n\t\tvar imageSize = { width: imageData.width, height: imageData.height };\n\t\tvar tmpImageData = copyImageData( imageData );\n\t\tvar colorImageData = copyImageData( imageData );\n\t\tvar blurredImageData = stackblur( tmpImageData, 0, 0, imageSize.width, imageSize.height, params.blur );\n\t\tvar greyscaleImageData = greyscale( blurredImageData );\n\t\tvar edgesImageData = sobel( greyscaleImageData ).toImageData();\n\t\tvar edgePoints = getEdgePoints( edgesImageData, params.threshold );\n\t\tvar edgeVertices = getVerticesFromPoints( edgePoints, params.vertexCount, params.accuracy, imageSize.width, imageSize.height );\n\t\tvar polygons = delaunay_2( edgeVertices );\n\t\t\n\t\tpolygons = addBoundingBoxesToPolygons( polygons );\n\t\t\n\t\tif ( ! params.transparentColor ) {\n\t\t\tpolygons = filterTransparentPolygons( polygons, colorImageData );\n\t\t}\n\t\t\n\t\tif ( params.fill === true && params.gradients === true ) {\n\t\t\tpolygons = addGradientsToPolygons( polygons, colorImageData, params );\n\t\t} else {\n\t\t\tpolygons = addColorToPolygons( polygons, colorImageData, params );\n\t\t}\n\n\t\treturn polygons;\n\t} else {\n\t\tthrow new Error( \"Can't work with the imageData provided. It seems to be corrupt.\" );\n\t\treturn;\n\t}\n};\n\nonmessage = function (msg) {\n\tif ( msg.data.imageData && msg.data.params ) {\n\t\ttry {\n\t\t\tvar imageData = msg.data.imageData;\n\n\t\t\t// phantomjs seems to have some memory loss so we need to make sure\n\t\t\tif ( typeof imageData.width === 'undefined' && typeof msg.data.imageDataWidth === 'number' ) {\n\t\t\t\timageData.width = msg.data.imageDataWidth;\n\t\t\t}\n\n\t\t\tif ( typeof imageData.height === 'undefined' && typeof msg.data.imageDataHeight === 'number' ) {\n\t\t\t\timageData.height = msg.data.imageDataHeight;\n\t\t\t}\n\t\t\t\n\t\t\tvar polygons = imageDataToPolygons( msg.data.imageData, msg.data.params );\n\t\t\t\t\t\t\n\t\t\tself.postMessage( {\n\t\t\t\tpolygonJSONStr: JSON.stringify( polygons )\n\t\t\t} );\n\t\t} catch ( err ) {\n\t\t\tself.postMessage( { err: err.message || err } );\n\t\t}\n\n\t} else {\n\t\tif ( msg.data.imageData ) {\n\t\t\tself.postMessage( { err: 'Parameters are missing.' } );\n\t\t} else {\n\t\t\tself.postMessage( { err: 'ImageData is missing.' } );\n\t\t}\n\t}\n\t\n\tself.close();\n};\n"],{type:'text/javascript'})) );
-
-	var inputFn;
-	var outputFn;
-	
-	var api = {
-		getParams: getParams,
-		getInput: getInput,
-		getOutput: getOutput
-	};
-
-	var inputMethods = {
-		fromImage: fromImage,
-		fromImageSync: fromImageSync,
-		fromImageData: fromImageData,
-		fromImageDataSync: fromImageDataSync
-	};
-
-	var outputMethods = {
-		toData: toData,
-		toDataSync: toDataSync,
-		toDataURL: toDataURL,
-		toDataURLSync: toDataURLSync,
-		toImageData: toImageData,
-		toImageDataSync: toImageDataSync,
-		toSVG: toSVG,
-		toSVGSync: toSVGSync
-	};
-
-	function getParams () {
-		return params;
-	}
-
-	function getInput () {
-		var result = objectAssign( { }, api );
-
-		if ( ! inputFn ) {
-			objectAssign( result, inputMethods );
-		}
-
-		return result;
-	}
-
-	function getOutput () {
-		var result = objectAssign( { }, api );
-
-		if ( ! outputFn ) {
-			objectAssign( result, outputMethods );
-		}
-
-		return result;
-	}
-
-	function fromImage ( inputParams ) { return setInput( fromImageToImageData, inputParams ); }
-	function fromImageSync ( inputParams ) { return setInput( fromImageToImageData, inputParams, true ); }
-	function fromImageData ( inputParams ) { return setInput( function (i) { return i; }, inputParams ); }
-	function fromImageDataSync ( inputParams ) { return setInput( function (i) { return i; }, inputParams, true ); }
-
-	function toData ( outputParams ) { return setOutput( function (i) { return i; }, outputParams ); }
-	function toDataSync ( outputParams ) { return setOutput( function (i) { return i; }, outputParams, true ); }
-	function toDataURL ( outputParams ) { return setOutput( polygonsToDataURL, outputParams ); }
-	function toDataURLSync ( outputParams ) { return setOutput( polygonsToDataURL, outputParams, true ); }
-	function toImageData ( outputParams ) { return setOutput( polygonsToImageData, outputParams ); }
-	function toImageDataSync ( outputParams ) { return setOutput( polygonsToImageData, outputParams, true ); }
-	function toSVG ( outputParams ) { return setOutput( polygonsToSVG, outputParams ); }
-	function toSVGSync ( outputParams ) { return setOutput( polygonsToSVG, outputParams, true ); }
-
-	function setInput ( fn, inputParams, isSync ) {
-		isInputSync = !! isSync;
-		
-		inputFn = function () {
-			if ( isInputSync ) {
-				return fn( inputParams );
-			} else {
-				return new Promise( function ( resolve, reject ) {
-					try {
-						var imageData = fn( inputParams );
-						resolve( imageData );
-					} catch ( err ) {
-						reject( err );
-					}
-				} );
-			}
-		};
-
-		if ( isReady() ) {
-			return getResult();
-		} else {
-			return getOutput();
-		}
-	}
-
-	function setOutput ( fn, outputpParams, isSync ) {
-		isOutputSync = !! isSync;
-
-		outputFn = function ( polygons, size ) {
-			if ( isOutputSync ) {
-				return fn( polygons, size, outputpParams );
-			} else {
-				return new Promise( function ( resolve, reject ) {
-					try {
-						var outputData = fn( polygons, size, outputpParams );
-						resolve( outputData );
-					} catch ( err ) {
-						reject( err );
-					}
-				} );
-			}
-		};
-
-		if ( isReady() ) {
-			return getResult();
-		} else {
-			return getInput();
-		}
-	}
-
-	function isReady () {
-		return inputFn && outputFn;
-	}
-
-	function getResult () {
-		if ( isInputSync && isOutputSync ) {
-			var imageData = inputFn( params );
-			var polygonData = imageDataToPolygons( imageData, params );
-			var outputData = outputFn( polygonData, imageData );
-
-			return outputData;
-		} else {
-			return new Promise( function ( resolve, reject ) {
-				var imageData;
-				
-				makeInput()
-					.then( function (imgData) {
-						imageData = imgData;
-						return makePolygonsInWorker( imageData, params );
-					}, reject )
-					.then( function (polygonData) {
-						return makeOutput( polygonData, imageData );
-					}, reject )
-					.then( function (outputData) {
-						resolve( outputData );
-					}, reject );
-			} );
-		}
-	}
-
-	function makeInput ( inputParams ) {
-		return new Promise( function ( resolve, reject ) {
-			if ( isInputSync ) {
-				try {
-					var imageData = inputFn( inputParams );
-					resolve( imageData );
-				} catch ( err ) {
-					reject( err );
-				}
-			} else {
-				inputFn( inputParams )
-					.then( resolve, reject );
-			}
-		} );
-	}
-
-	function makePolygonsInWorker ( imageData, params ) {
-		return new Promise( function ( resolve, reject ) {
-			worker.addEventListener( 'message', function (event) {
-				if ( event.data && event.data.polygonJSONStr ) {
-					var polygonData = JSON.parse( event.data.polygonJSONStr );
-					
-					resolve( polygonData );
-				} else {
-					if ( event.data && event.data.err ) {
-						reject( event.data.err );
-					} else {
-						reject( event );
-					}
-				}
-			} );
-
-			worker.postMessage( {
-				params: params,
-				imageData: imageData,
-				// phantomjs tends to forget about those two
-				// so we send them separately
-				imageDataWidth: imageData.width,
-				imageDataHeight: imageData.height
-			} );
-		} );
-	}
-
-	function makeOutput ( polygonData, imageData ) {
-		return new Promise( function ( resolve, reject ) {
-			if ( isOutputSync ) {
-				try {
-					var outputData = outputFn( polygonData, imageData );
-					resolve( outputData );
-				} catch ( e ) {
-					reject( e );
-				}
-			} else {
-				outputFn( polygonData, imageData )
-					.then( resolve, reject );
-			}
-		} );
-	}
-
-	return getInput();
-};
-
-return browser;
-
-})));
-
+  return t.forEach(function (t) {
+    var a = getColorByPos(polygonCenter(t), e);n && (t.fill = g(a, l)), o && (t.strokeColor = g(a, h), t.strokeWidth = r, t.lineJoin = i);
+  }), t;
+},
+    luminance = function luminance(t) {
+  var e = [t.r, t.g, t.b].map(function (t) {
+    return (t /= 255) <= .03928 ? t / 12.92 : Math.pow((t + .055) / 1.055, 2.4);
+  });return .2126 * e[0] + .7152 * e[1] + .0722 * e[2];
+},
+    distance = function distance(t, e) {
+  var a = e.x - t.x,
+      n = e.y - t.y;return Math.sqrt(a * a + n * n);
+},
+    addGradientsToPolygons = function addGradientsToPolygons(t, e, a) {
+  return t.forEach(function (t) {
+    var n = {};"abc".split("").forEach(function (o) {
+      var r = getColorByPos(t[o], e, a.transparentColor);n[o] = { key: o, color: r, x: t[o].x, y: t[o].y }, n[o].luminance = luminance(n[o].color);var i = "abc".replace(o, "").split("");n[o].median = { x: (t[i[0]].x + t[i[1]].x) / 2, y: (t[i[0]].y + t[i[1]].y) / 2 }, n[o].medianColor = getColorByPos(n[o].median, e, a.transparentColor), n[o].medianLuminance = luminance(n[o].medianColor);
+    });var o = [n.a, n.b, n.c].sort(function (t, e) {
+      return Math.abs(t.luminance - t.medianLuminance) - Math.abs(e.luminance - e.medianLuminance);
+    }),
+        r = o[0],
+        i = o[0],
+        s = r.median,
+        l = [i],
+        h = distance(i, s);for (var _t = 1, _e2 = a.gradientStops - 2; _t < _e2; _t++) {
+      var _e3 = _t * (h / a.gradientStops) / h,
+          _n = { x: i.x + _e3 * (s.x - i.x), y: i.y + _e3 * (s.y - i.y) };l.push(_n);
+    }l.push(s), t.gradient = { x1: r.x, y1: r.y, x2: r.median.x, y2: r.median.y, colors: l.map(function (t) {
+        return getColorByPos(t, e, a.transparentColor);
+      }) }, a.stroke && (t.strokeWidth = a.strokeWidth, t.lineJoin = a.lineJoin), n = null;
+  }), t;
+},
+    filterTransparentPolygons = function filterTransparentPolygons(t, e) {
+  return t.filter(function (t) {
+    var a = getColorByPos(polygonCenter(t), e);return !isTransparent(a);
+  });
+},
+    imageDataToPolygons = function imageDataToPolygons(t, e) {
+  if (isImageData(t)) {
+    var a = { width: t.width, height: t.height },
+        n = copyImageData(t),
+        o = copyImageData(t),
+        r = stackblur(n, 0, 0, a.width, a.height, e.blur),
+        i = greyscale(r),
+        s = sobel(i).toImageData(),
+        l = getEdgePoints(s, e.threshold),
+        h = getVerticesFromPoints(l, e.vertexCount, e.accuracy, a.width, a.height);var g = delaunay_2(h);return g = addBoundingBoxesToPolygons(g), e.transparentColor || (g = filterTransparentPolygons(g, o)), g = !0 === e.fill && !0 === e.gradients ? addGradientsToPolygons(g, o, e) : addColorToPolygons(g, o, e);
+  }throw new Error("Can't work with the imageData provided. It seems to be corrupt.");
+},
+    browser = function browser(t) {
+  function e() {
+    var t = objectAssign({}, c);return g || objectAssign(t, u), t;
+  }function a() {
+    var t = objectAssign({}, c);return d || objectAssign(t, y), t;
+  }function n(t, e, n) {
+    return s = !!n, g = function g() {
+      return s ? t(e) : new Promise(function (a, n) {
+        try {
+          a(t(e));
+        } catch (t) {
+          n(t);
+        }
+      });
+    }, r() ? i() : a();
+  }function o(t, a, n) {
+    return l = !!n, d = function d(e, n) {
+      return l ? t(e, n, a) : new Promise(function (o, r) {
+        try {
+          o(t(e, n, a));
+        } catch (t) {
+          r(t);
+        }
+      });
+    }, r() ? i() : e();
+  }function r() {
+    return g && d;
+  }function i() {
+    if (s && l) {
+      var _e4 = g(t),
+          _a2 = imageDataToPolygons(_e4, t);return d(_a2, _e4);
+    }return new Promise(function (e, a) {
+      var n = void 0;(function (t) {
+        return new Promise(function (e, a) {
+          if (s) try {
+            var _n2 = g(t);e(_n2);
+          } catch (t) {
+            a(t);
+          } else g(t).then(e, a);
+        });
+      })().then(function (e) {
+        return n = e, function (t, e) {
+          return new Promise(function (a, n) {
+            h.addEventListener("message", function (t) {
+              if (t.data && t.data.polygonJSONStr) {
+                var _e5 = JSON.parse(t.data.polygonJSONStr);a(_e5);
+              } else n(t.data && t.data.err ? t.data.err : t);
+            }), h.postMessage({ params: e, imageData: t, imageDataWidth: t.width, imageDataHeight: t.height });
+          });
+        }(n, t);
+      }, a).then(function (t) {
+        return function (t, e) {
+          return new Promise(function (a, n) {
+            if (l) try {
+              var _o2 = d(t, e);a(_o2);
+            } catch (t) {
+              n(t);
+            } else d(t, e).then(a, n);
+          });
+        }(t, n);
+      }, a).then(function (t) {
+        e(t);
+      }, a);
+    });
+  }t = sanitizeInput(t);var s = !1,
+      l = !1;var h = new Worker(URL.createObjectURL(new Blob(['function createCommonjsModule(t,e){return e={exports:{}},t(e,e.exports),e.exports}function copyImageDataWithCanvas(t){const e=new Canvas$1(t.width,t.height).getContext("2d");return e.putImageData(t,0,0),e.getImageData(0,0,t.width,t.height)}function BlurStack(){this.r=0,this.g=0,this.b=0,this.a=0,this.next=null}function addVertex(t,e,a){let n=t+"|"+e;a[n]||(a[n]={x:t,y:e}),n=null}var commonjsGlobal="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{},delaunay=createCommonjsModule(function(t){function e(t,e,a){this.a=t,this.b=e,this.c=a;var n,o,r,i,s=e.x-t.x,h=e.y-t.y,l=a.x-t.x,d=a.y-t.y,g=s*(t.x+e.x)+h*(t.y+e.y),c=l*(t.x+a.x)+d*(t.y+a.y),u=2*(s*(a.y-e.y)-h*(a.x-e.x));Math.abs(u)<1e-6?(n=Math.min(t.x,e.x,a.x),o=Math.min(t.y,e.y,a.y),r=.5*(Math.max(t.x,e.x,a.x)-n),i=.5*(Math.max(t.y,e.y,a.y)-o),this.x=n+r,this.y=o+i,this.r=r*r+i*i):(this.x=(d*g-h*c)/u,this.y=(s*c-l*g)/u,r=this.x-t.x,i=this.y-t.y,this.r=r*r+i*i)}function a(t,e){return e.x-t.x}function n(t){var e,a,n,o,r,i=t.length;t:for(;i;)for(a=t[--i],e=t[--i],n=i;n;)if(r=t[--n],o=t[--n],e===o&&a===r||e===r&&a===o){t.splice(i,2),t.splice(n,2),i-=2;continue t}}function o(t){if(t.length<3)return[];t.sort(a);for(var o=t.length-1,r=t[o].x,i=t[0].x,s=t[o].y,h=s;o--;)t[o].y<s&&(s=t[o].y),t[o].y>h&&(h=t[o].y);var l,d,g,c=i-r,u=h-s,y=c>u?c:u,f=.5*(i+r),p=.5*(h+s),m=[new e({x:f-20*y,y:p-y,__sentinel:!0},{x:f,y:p+20*y,__sentinel:!0},{x:f+20*y,y:p-y,__sentinel:!0})],x=[],w=[];for(o=t.length;o--;){for(w.length=0,l=m.length;l--;)(c=t[o].x-m[l].x)>0&&c*c>m[l].r?(x.push(m[l]),m.splice(l,1)):c*c+(u=t[o].y-m[l].y)*u>m[l].r||(w.push(m[l].a,m[l].b,m[l].b,m[l].c,m[l].c,m[l].a),m.splice(l,1));for(n(w),l=w.length;l;)g=w[--l],d=w[--l],m.push(new e(d,g,t[o]))}for(Array.prototype.push.apply(x,m),o=x.length;o--;)(x[o].a.__sentinel||x[o].b.__sentinel||x[o].c.__sentinel)&&x.splice(o,1);return x}e.prototype.draw=function(t){t.beginPath(),t.moveTo(this.a.x,this.a.y),t.lineTo(this.b.x,this.b.y),t.lineTo(this.c.x,this.c.y),t.closePath(),t.stroke()},t.exports={Triangle:e,triangulate:o}}),delaunay_2=delaunay.triangulate,sobel=createCommonjsModule(function(t,e){!function(a){"use strict";function n(t){function e(t){return function(e,a,n){return n=n||0,t[4*(r*a+e)+n]}}if(!(this instanceof n))return new n(t);var a,o,r=t.width,i=t.height,s=[[-1,0,1],[-2,0,2],[-1,0,1]],h=[[-1,-2,-1],[0,0,0],[1,2,1]],l=[],d=[],g=e(t.data);for(o=0;o<i;o++)for(a=0;a<r;a++){var c=(g(a,o,0)+g(a,o,1)+g(a,o,2))/3;d.push(c,c,c,255)}for(g=e(d),o=0;o<i;o++)for(a=0;a<r;a++){var u=s[0][0]*g(a-1,o-1)+s[0][1]*g(a,o-1)+s[0][2]*g(a+1,o-1)+s[1][0]*g(a-1,o)+s[1][1]*g(a,o)+s[1][2]*g(a+1,o)+s[2][0]*g(a-1,o+1)+s[2][1]*g(a,o+1)+s[2][2]*g(a+1,o+1),y=h[0][0]*g(a-1,o-1)+h[0][1]*g(a,o-1)+h[0][2]*g(a+1,o-1)+h[1][0]*g(a-1,o)+h[1][1]*g(a,o)+h[1][2]*g(a+1,o)+h[2][0]*g(a-1,o+1)+h[2][1]*g(a,o+1)+h[2][2]*g(a+1,o+1),f=Math.sqrt(u*u+y*y)>>>0;l.push(f,f,f,255)}var p=l;return"function"==typeof Uint8ClampedArray&&(p=new Uint8ClampedArray(l)),p.toImageData=function(){return n.toImageData(p,r,i)},p}function o(t,e,a){return{width:e,height:a,data:t}}n.toImageData=function(t,e,a){if("function"==typeof ImageData&&"[object Uint16Array]"===Object.prototype.toString.call(t))return new ImageData(t,e,a);if("object"==typeof window&&"object"==typeof window.document){var n=document.createElement("canvas");if("function"==typeof n.getContext){var r=n.getContext("2d").createImageData(e,a);return r.data.set(t),r}return new o(t,e,a)}return new o(t,e,a)},t.exports&&(e=t.exports=n),e.Sobel=n}()}),isImageData=t=>t&&"number"==typeof t.width&&"number"==typeof t.height&&t.data&&"number"==typeof t.data.length&&"object"==typeof t.data;class Canvas$1{constructor(t=300,e=150){"undefined"==typeof window?(this.canvasEl={width:t,height:e},this.ctx=null):(this.canvasEl=document.createElement("canvas"),this.canvasEl.width=t,this.canvasEl.height=e,this.ctx=this.canvasEl.getContext("2d"))}getContext(){return this.ctx}toDataURL(t,e,a){if("function"!=typeof a)return this.canvasEl.toDataURL(t,e);a(this.canvasEl.toDataURL(t,e))}get width(){return this.canvasEl.width}set width(t){this.canvasEl.width=t}get height(){return this.canvasEl.height}set height(t){this.canvasEl.height=t}}"undefined"!=typeof window&&(Canvas$1.Image=Image);var copyImageData=t=>{if(isImageData(t)){if("undefined"==typeof Uint8ClampedArray){if("undefined"==typeof window)throw new Error("Can\'t copy imageData in webworker without Uint8ClampedArray support.");return copyImageDataWithCanvas(t)}{const e=new Uint8ClampedArray(t.data);if("undefined"==typeof ImageData)return{width:t.width,height:t.height,data:e};{let a;try{a=new ImageData(e,t.width,t.height)}catch(e){if("undefined"==typeof window)throw new Error("Can\'t copy imageData in webworker without proper ImageData() support.");a=copyImageDataWithCanvas(t)}return a}}}throw new Error("Given imageData object is not useable.")};const mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,289,287,285,282,280,278,275,273,271,269,267,265,263,261,259],shg_table=[9,11,12,13,13,14,14,15,15,15,15,16,16,16,16,17,17,17,17,17,17,17,18,18,18,18,18,18,18,18,18,19,19,19,19,19,19,19,19,19,19,19,19,19,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24];var stackblur=(t,e,a,n,o,r)=>{var i,s,h,l,d,g,c,u,y,f,p,m,x,w,b,v,C,D,I,E,M,P,B,k,_=t.data,T=r+r+1,j=n-1,A=o-1,S=r+1,U=S*(S+1)/2,V=new BlurStack,W=V;for(h=1;h<T;h++)if(W=W.next=new BlurStack,h==S)var $=W;W.next=V;var G=null,J=null;c=g=0;var L=mul_table[r],O=shg_table[r];for(s=0;s<o;s++){for(v=C=D=I=u=y=f=p=0,m=S*(E=_[g]),x=S*(M=_[g+1]),w=S*(P=_[g+2]),b=S*(B=_[g+3]),u+=U*E,y+=U*M,f+=U*P,p+=U*B,W=V,h=0;h<S;h++)W.r=E,W.g=M,W.b=P,W.a=B,W=W.next;for(h=1;h<S;h++)l=g+((j<h?j:h)<<2),u+=(W.r=E=_[l])*(k=S-h),y+=(W.g=M=_[l+1])*k,f+=(W.b=P=_[l+2])*k,p+=(W.a=B=_[l+3])*k,v+=E,C+=M,D+=P,I+=B,W=W.next;for(G=V,J=$,i=0;i<n;i++)_[g+3]=B=p*L>>O,0!=B?(B=255/B,_[g]=(u*L>>O)*B,_[g+1]=(y*L>>O)*B,_[g+2]=(f*L>>O)*B):_[g]=_[g+1]=_[g+2]=0,u-=m,y-=x,f-=w,p-=b,m-=G.r,x-=G.g,w-=G.b,b-=G.a,l=c+((l=i+r+1)<j?l:j)<<2,u+=v+=G.r=_[l],y+=C+=G.g=_[l+1],f+=D+=G.b=_[l+2],p+=I+=G.a=_[l+3],G=G.next,m+=E=J.r,x+=M=J.g,w+=P=J.b,b+=B=J.a,v-=E,C-=M,D-=P,I-=B,J=J.next,g+=4;c+=n}for(i=0;i<n;i++){for(C=D=I=v=y=f=p=u=0,m=S*(E=_[g=i<<2]),x=S*(M=_[g+1]),w=S*(P=_[g+2]),b=S*(B=_[g+3]),u+=U*E,y+=U*M,f+=U*P,p+=U*B,W=V,h=0;h<S;h++)W.r=E,W.g=M,W.b=P,W.a=B,W=W.next;for(d=n,h=1;h<=r;h++)g=d+i<<2,u+=(W.r=E=_[g])*(k=S-h),y+=(W.g=M=_[g+1])*k,f+=(W.b=P=_[g+2])*k,p+=(W.a=B=_[g+3])*k,v+=E,C+=M,D+=P,I+=B,W=W.next,h<A&&(d+=n);for(g=i,G=V,J=$,s=0;s<o;s++)_[(l=g<<2)+3]=B=p*L>>O,B>0?(B=255/B,_[l]=(u*L>>O)*B,_[l+1]=(y*L>>O)*B,_[l+2]=(f*L>>O)*B):_[l]=_[l+1]=_[l+2]=0,u-=m,y-=x,f-=w,p-=b,m-=G.r,x-=G.g,w-=G.b,b-=G.a,l=i+((l=s+S)<A?l:A)*n<<2,u+=v+=G.r=_[l],y+=C+=G.g=_[l+1],f+=D+=G.b=_[l+2],p+=I+=G.a=_[l+3],G=G.next,m+=E=J.r,x+=M=J.g,w+=P=J.b,b+=B=J.a,v-=E,C-=M,D-=P,I-=B,J=J.next,g+=n}return t},greyscale=t=>{const e=t.data.length;let a;for(let n=0;n<e;n+=4)a=.34*t.data[n]+.5*t.data[n+1]+.16*t.data[n+2],t.data[n]=a,t.data[n+1]=a,t.data[n+2]=a;return t},getEdgePoints=(t,e)=>{const a=t.width,n=t.height,o=t.data,r=[];var i,s,h,l,d,g,c,u,y;for(s=0;s<n;s+=2)for(i=0;i<a;i+=2){for(u=y=0,h=-1;h<=1;h++)if(g=s+h,c=g*a,g>=0&&g<n)for(l=-1;l<=1;l++)(d=i+l)>=0&&d<a&&(u+=o[d+c<<2],y++);y&&(u/=y),u>e&&r.push({x:i,y:s})}return r},clamp=(t,e,a)=>t<e?e:t>a?a:t,getVerticesFromPoints=(t,e,a,n,o)=>{const r={},i=Math.max(~~(e*(1-a)),5),s=Math.round(Math.sqrt(i)),h=~~(n/s),l=~~(o/Math.round(Math.ceil(i/s)));let d=0,g=0,c=0,u=0;for(u=0;u<o;u+=l)for(c=g=++d%2==0?~~(h/2):0;c<n;c+=h)c<n&&u<o&&addVertex(~~(c+Math.cos(u)*l),~~(u+Math.sin(c)*h),r);addVertex(0,0,r),addVertex(n-1,0,r),addVertex(n-1,o-1,r),addVertex(0,o-1,r);const y=e-Object.keys(r).length,f=t.length,p=~~(f/y);if(e>0&&p>0){let e=0;for(e=0;e<f;e+=p)addVertex(t[e].x,t[e].y,r)}return t=null,Object.keys(r).map(t=>r[t])},getBoundingBox=t=>{let e=1/0,a=-1/0,n=1/0,o=-1/0;return t.forEach(t=>{t.x<e&&(e=t.x),t.y<n&&(n=t.y),t.x>a&&(a=t.x),t.y>o&&(o=t.y)}),{x:e,y:n,width:a-e,height:o-n}},addBoundingBoxesToPolygons=(t,e,a)=>(t.forEach(t=>{t.boundingBox=getBoundingBox([t.a,t.b,t.c])}),t.filter(t=>t.boundingBox.width>0&&t.boundingBox.height>0)),getColorByPos=(t,e,a)=>{let n=(0|clamp(t.x,1,e.width-2))+(0|clamp(t.y,1,e.height-2))*e.width<<2;n>=e.data.length&&(n=e.data.length-5);const o=e.data[n+3]/255;return a&&0===o?a:{r:e.data[n],g:e.data[n+1],b:e.data[n+2],a:o}},polygonCenter=t=>({x:.33333*(t.a.x+t.b.x+t.c.x),y:.33333*(t.a.y+t.b.y+t.c.y)}),isTransparent=t=>0===t.a;const objectAssign=Object.assign;var toRGBA=t=>{const e=objectAssign({a:1},t);return`rgba(${e.r}, ${e.g}, ${e.b}, ${e.a})`},addColorToPolygons=function(t,e,a){const{fill:n,stroke:o,strokeWidth:r,lineJoin:i,transparentColor:s}=a,h="string"==typeof n&&n,l="string"==typeof o&&o,d=(t,e)=>{const a=isTransparent(t)&&s;return e&&!a?e:toRGBA(a?s:t)};return t.forEach(t=>{const a=getColorByPos(polygonCenter(t),e);n&&(t.fill=d(a,h)),o&&(t.strokeColor=d(a,l),t.strokeWidth=r,t.lineJoin=i)}),t},luminance=t=>{const e=[t.r,t.g,t.b].map(t=>(t/=255)<=.03928?t/12.92:Math.pow((t+.055)/1.055,2.4));return.2126*e[0]+.7152*e[1]+.0722*e[2]},distance=(t,e)=>{let a=e.x-t.x,n=e.y-t.y;return Math.sqrt(a*a+n*n)},addGradientsToPolygons=function(t,e,a){return t.forEach(t=>{let n={};"abc".split("").forEach(o=>{const r=getColorByPos(t[o],e,a.transparentColor);n[o]={key:o,color:r,x:t[o].x,y:t[o].y},n[o].luminance=luminance(n[o].color);const i="abc".replace(o,"").split("");n[o].median={x:(t[i[0]].x+t[i[1]].x)/2,y:(t[i[0]].y+t[i[1]].y)/2},n[o].medianColor=getColorByPos(n[o].median,e,a.transparentColor),n[o].medianLuminance=luminance(n[o].medianColor)});const o=[n.a,n.b,n.c].sort((t,e)=>Math.abs(t.luminance-t.medianLuminance)-Math.abs(e.luminance-e.medianLuminance)),r=o[0],i=o[0],s=r.median,h=[i],l=distance(i,s);for(let t=1,e=a.gradientStops-2;t<e;t++){const e=t*(l/a.gradientStops)/l,n={x:i.x+e*(s.x-i.x),y:i.y+e*(s.y-i.y)};h.push(n)}h.push(s),t.gradient={x1:r.x,y1:r.y,x2:r.median.x,y2:r.median.y,colors:h.map(t=>getColorByPos(t,e,a.transparentColor))},a.stroke&&(t.strokeWidth=a.strokeWidth,t.lineJoin=a.lineJoin),n=null}),t},filterTransparentPolygons=(t,e)=>t.filter(t=>{const a=getColorByPos(polygonCenter(t),e);return!isTransparent(a)}),imageDataToPolygons=(t,e)=>{if(isImageData(t)){const a={width:t.width,height:t.height},n=copyImageData(t),o=copyImageData(t),r=stackblur(n,0,0,a.width,a.height,e.blur),i=greyscale(r),s=sobel(i).toImageData(),h=getEdgePoints(s,e.threshold),l=getVerticesFromPoints(h,e.vertexCount,e.accuracy,a.width,a.height);let d=delaunay_2(l);return d=addBoundingBoxesToPolygons(d),e.transparentColor||(d=filterTransparentPolygons(d,o)),d=!0===e.fill&&!0===e.gradients?addGradientsToPolygons(d,o,e):addColorToPolygons(d,o,e)}throw new Error("Can\'t work with the imageData provided. It seems to be corrupt.")};onmessage=(t=>{if(t.data.imageData&&t.data.params)try{let e=t.data.imageData;void 0===e.width&&"number"==typeof t.data.imageDataWidth&&(e.width=t.data.imageDataWidth),void 0===e.height&&"number"==typeof t.data.imageDataHeight&&(e.height=t.data.imageDataHeight);const a=imageDataToPolygons(t.data.imageData,t.data.params);self.postMessage({polygonJSONStr:JSON.stringify(a)})}catch(t){self.postMessage({err:t.message||t})}else t.data.imageData?self.postMessage({err:"Parameters are missing."}):self.postMessage({err:"ImageData is missing."});self.close()});'], { type: "text/javascript" })));var g = void 0,
+      d = void 0;var c = { getParams: function getParams() {
+      return t;
+    }, getInput: e, getOutput: a },
+      u = { fromImage: function fromImage(t) {
+      return n(fromImageToImageData, t);
+    }, fromImageSync: function fromImageSync(t) {
+      return n(fromImageToImageData, t, !0);
+    }, fromImageData: function fromImageData(t) {
+      return n(function (t) {
+        return t;
+      }, t);
+    }, fromImageDataSync: function fromImageDataSync(t) {
+      return n(function (t) {
+        return t;
+      }, t, !0);
+    } },
+      y = { toData: function toData(t) {
+      return o(function (t) {
+        return t;
+      }, t);
+    }, toDataSync: function toDataSync(t) {
+      return o(function (t) {
+        return t;
+      }, t, !0);
+    }, toDataURL: function toDataURL(t) {
+      return o(polygonsToDataURL, t);
+    }, toDataURLSync: function toDataURLSync(t) {
+      return o(polygonsToDataURL, t, !0);
+    }, toImageData: function toImageData(t) {
+      return o(polygonsToImageData, t);
+    }, toImageDataSync: function toImageDataSync(t) {
+      return o(polygonsToImageData, t, !0);
+    }, toSVG: function toSVG(t) {
+      return o(polygonsToSVG, t);
+    }, toSVGSync: function toSVGSync(t) {
+      return o(polygonsToSVG, t, !0);
+    } };return e();
+};exports.default = browser;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
 
 /***/ }),

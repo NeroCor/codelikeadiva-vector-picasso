@@ -1,4 +1,4 @@
-import triangulate from 'triangulate-image';
+import triangulate from './lib/triangulate-image-browser.es6.min.js';
 import Victor from 'victor';
 
 class NailsAndStringDrawer {
@@ -23,23 +23,35 @@ class NailsAndStringDrawer {
     triangulatedImage.toSVG().then((data) => {
       this.svg.innerHTML = data;
 
-      params = {
-        blur: params.blur,
-        accuracy: (params.accuracy + Number(this.lineDeviation.value)),
-        threshold: params.threshold,
-        vertexCount: params.vertexCount,
-      };
-
+      
       // Cool Bézier Line calculations with slightly changed Triangulation Options
+      params.accuracy = params.accuracy + Number(this.lineDeviation.value);
       triangulatedImage = triangulate(params).fromImage(this.srcImage);
-      triangulatedImage.toData().then((dataDeviated) => {
-        let lines = dataDeviated.map(triangle => this.generateLines(triangle));
-        lines = [].concat(...lines);
-        const svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
-        svgLines.map(svgLine => this.svg.appendChild(svgLine));
-      });
+      triangulatedImage.toData().then(
+        (triangulationData) => {
+          let lines = triangulationData.map(triangle => this.generateLines(triangle));
+          lines = [].concat(...lines);
+          const svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
+          svgLines.map(svgLine => this.svg.appendChild(svgLine));
+        }
+      );
+
+      // Draw a second layer of Lines if choosen
+      if(this.doubleLines.checked){
+        params.accuracy = params.accuracy - (2 * Number(this.lineDeviation.value));
+        triangulatedImage = triangulate(params).fromImage(this.srcImage);
+        triangulatedImage.toData().then(
+          (triangulationData) => {
+            let lines = triangulationData.map(triangle => this.generateLines(triangle));
+            lines = [].concat(...lines);
+            const svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
+            svgLines.map(svgLine => this.svg.appendChild(svgLine));
+          }
+        );
+      }
     });
   }
+
 
   generateLines(triangle) {
     // Get Triangle Corners
@@ -149,21 +161,6 @@ class NailsAndStringDrawer {
     myMenu.appendChild(element);
 
     element = document.createElement('label');
-    element.setAttribute('for', 'threshold');
-    element.innerText = 'Threshold:';
-    myMenu.appendChild(element);
-    element = document.createElement('input');
-    element.setAttribute('type', 'range');
-    element.setAttribute('name', 'threshold');
-    element.setAttribute('min', '0');
-    element.setAttribute('max', '50');
-    element.setAttribute('value', '50');
-    element.setAttribute('step', '1');
-    element.addEventListener('change', () => this.draw());
-    this.threshold = element;
-    myMenu.appendChild(element);
-
-    element = document.createElement('label');
     element.setAttribute('for', 'vertexCount');
     element.innerText = 'Vertex Count:';
     myMenu.appendChild(element);
@@ -179,13 +176,12 @@ class NailsAndStringDrawer {
     element = document.createElement('hr');
     myMenu.appendChild(element);
 
-    // File Input
     element = document.createElement('h4');
     element.innerText = 'Line Options';
     myMenu.appendChild(element);
     element = document.createElement('label');
     element.setAttribute('for', 'lineDeviation');
-    element.innerText = 'Line to Triangle deviation:';
+    element.innerText = 'Deviation:';
     myMenu.appendChild(element);
     element = document.createElement('input');
     element.setAttribute('type', 'range');
@@ -196,6 +192,17 @@ class NailsAndStringDrawer {
     element.setAttribute('value', '0.02');
     element.addEventListener('change', () => this.draw());
     this.lineDeviation = element;
+    myMenu.appendChild(element);
+
+    element = document.createElement('label');
+    element.setAttribute('for', 'doubleLines');
+    element.innerText = '2xLines:';
+    myMenu.appendChild(element);
+    element = document.createElement('input');
+    element.setAttribute('type', 'checkbox');
+    element.setAttribute('name', 'doubleLines');
+    element.addEventListener('change', () => this.draw());
+    this.doubleLines = element;
     myMenu.appendChild(element);
     element = document.createElement('br');
     myMenu.appendChild(element);

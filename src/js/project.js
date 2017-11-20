@@ -39,8 +39,7 @@ class Project {
   }
 
   generateOverlay() {
-    if (!sessionStorage['status']) {
-      sessionStorage['status'] = 'init';
+
 
       const overlay = `<div id="overlay"><div class="box"><button></button><span class="title">${this.outputTitle}</span><span class="author">${Config.author}</span><div><span class="instruction">Instructions:</span><p>${Config.instructions}</p></div></div></div>`;
       document.getElementsByTagName('body')[0].insertAdjacentHTML('beforeend', overlay);
@@ -57,7 +56,7 @@ class Project {
           this.closeOverlay();
         }
       });
-    }
+
   }
 
   closeOverlay() {

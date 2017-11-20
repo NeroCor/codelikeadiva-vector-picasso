@@ -29,7 +29,7 @@
     "fs": "^0.0.1-security",
     "p5": "^0.5.16",
     "p5.js-svg": "^0.5.2",
-    "triangulate-image": "^0.5.2",
+    "triangulate-image": "github:NeroCor/triangulate-image",
     "victor": "^1.1.0"
   }
 }

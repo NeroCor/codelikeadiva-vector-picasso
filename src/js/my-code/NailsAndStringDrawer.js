@@ -15,7 +15,6 @@ class NailsAndStringDrawer {
     let params = {
       blur: Number(this.blur.value),
       accuracy: Number(this.accuracy.value),
-      threshold: Number(this.threshold.value),
       vertexCount: Number(this.vertexCount.value),
     };
 
@@ -157,7 +156,7 @@ class NailsAndStringDrawer {
     element.setAttribute('type', 'range');
     element.setAttribute('name', 'threshold');
     element.setAttribute('min', '0');
-    element.setAttribute('max', '100');
+    element.setAttribute('max', '50');
     element.setAttribute('value', '50');
     element.setAttribute('step', '1');
     element.addEventListener('change', () => this.draw());

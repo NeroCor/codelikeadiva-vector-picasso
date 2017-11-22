@@ -67,4 +67,10 @@ module.exports = {
   devServer: {
     contentBase: './dist'
   },
+  node: {
+    console: false,
+    fs: 'empty',
+    net: 'empty',
+    tls: 'empty'
+  },
 };

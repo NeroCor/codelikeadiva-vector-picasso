@@ -26,6 +26,8 @@
   "dependencies": {
     "eslint-config-airbnb": "^16.1.0",
     "fs": "^0.0.1-security",
+    "superagent": "^3.8.1",
+    "superagent-bluebird-promise": "^4.2.0",
     "victor": "^1.1.0"
   }
 }

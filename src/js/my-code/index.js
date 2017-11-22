@@ -1,4 +1,5 @@
 import NailsAndStringDrawer from './NailsAndStringDrawer';
+import ImgurGallery from './ImgurGallery';
 
 class Artwork {
   constructor() {
@@ -8,11 +9,13 @@ class Artwork {
 
     // My Art Class in it you find the render logic
     this.nailsAndStringDrawer = new NailsAndStringDrawer(this.svg, this.srcImage);
+    this.imgurGallery = new ImgurGallery(this.svg);
   }
 
   init() {
     // add controll Fields to Menu
     this.nailsAndStringDrawer.buildMenu();
+    this.imgurGallery.buildMenu();
     this.buildMenu();
 
     // clear SVG

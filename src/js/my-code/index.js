@@ -14,8 +14,8 @@ class Artwork {
 
   init() {
     // add controll Fields to Menu
-    this.nailsAndStringDrawer.buildMenu();
     this.imgurGallery.buildMenu();
+    this.nailsAndStringDrawer.buildMenu();
     this.buildMenu();
 
     // clear SVG

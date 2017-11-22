@@ -1,0 +1,24 @@
+#artwork-wrapper{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#myMenu{
+  text-align: left;
+}
+
+#nailsAndLinesMenu{
+  text-align: left;
+  display: grid;
+  grid-template-columns:  7rem 7rem;
+
+  h4{
+    grid-column-start: 1;
+    grid-column-end: 3;
+  }
+
+  input[type=range]::-webkit-slider-runnable-track{
+    background: black;
+  }
+}

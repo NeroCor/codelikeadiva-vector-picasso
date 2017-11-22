@@ -1,0 +1,14 @@
+#imgurGallery{
+  position: fixed;
+  top: 10%;
+  right: 0;
+  width: 15rem;
+  height: auto;
+  padding: 20px;
+  background-color: rgba(lightgrey, 0.7);
+
+  img{
+    width: 100%;
+    height: auto;
+  }
+}

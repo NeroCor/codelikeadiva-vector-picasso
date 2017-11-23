@@ -1,3 +1,15 @@
+#imgurGallery {
+  position: fixed;
+  top: 10%;
+  right: 0;
+  width: 15rem;
+  height: auto;
+  padding: 20px;
+  background-color: rgba(211, 211, 211, 0.7); }
+  #imgurGallery img {
+    width: 100%;
+    height: auto; }
+
 #artwork-wrapper {
   display: flex;
   justify-content: center;
@@ -15,6 +27,9 @@
     grid-column-end: 3; }
   #nailsAndLinesMenu input[type=range]::-webkit-slider-runnable-track {
     background: black; }
+
+a {
+  margin-bottom: 0.2rem; }
 
 html {
   padding: 0;

@@ -31,6 +31,7 @@ class Artwork {
 
     // draw Art
     this.nailsAndStringDrawer.draw();
+    this.imgurGallery.setUploadButtonStatus('ready');
   }
 
   // Helper Function to clear the SVG

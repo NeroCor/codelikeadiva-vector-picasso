@@ -68,7 +68,7 @@
 /***/ (function(module, exports, __webpack_require__) {
 
 __webpack_require__(1);
-module.exports = __webpack_require__(9);
+module.exports = __webpack_require__(10);
 
 
 /***/ }),
@@ -234,7 +234,7 @@ Object.defineProperty(exports, "__esModule", {
 var config = {
   author: "Andreas Wolf",
   title: "Bezier Abstraction",
-  instructions: "After an Image gets uploaded, a triangulation this will be used as a Background. Another triangulation is performet with slightly different parameters, these Triangles will be used to create a Web of Lines. The Algorithm which generates these Lines is the same to generate Bezier-Curves"
+  instructions: 'First you choose an Source Image. <br/> <br/> This image will then get triangulated and drawen as an Background (no Magic). <br/><br/> After this first triangulation a second triangulation will be performed, but with slightly changed parameters. The Algorithm of drawing the Lines inside these Triangles, is the same as the Algorithm which is used to draw <a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Constructing_B.C3.A9zier_curves" target="_blank">Quadratic Bezier Curves</a>. <br/>This Mesh of Lines atop of the triangulation gives the Artwork the feeling of depth and details. <br/><br/> Bonus:<br/> You can upload your Image into an Imgur Album'
 };
 
 exports.default = config;
@@ -256,6 +256,10 @@ var _NailsAndStringDrawer = __webpack_require__(5);
 
 var _NailsAndStringDrawer2 = _interopRequireDefault(_NailsAndStringDrawer);
 
+var _ImgurGallery = __webpack_require__(9);
+
+var _ImgurGallery2 = _interopRequireDefault(_ImgurGallery);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -270,6 +274,7 @@ var Artwork = function () {
 
     // My Art Class in it you find the render logic
     this.nailsAndStringDrawer = new _NailsAndStringDrawer2.default(this.svg, this.srcImage);
+    this.imgurGallery = new _ImgurGallery2.default(this.svg);
   }
 
   _createClass(Artwork, [{
@@ -278,6 +283,7 @@ var Artwork = function () {
       var _this = this;
 
       // add controll Fields to Menu
+      this.imgurGallery.buildMenu();
       this.nailsAndStringDrawer.buildMenu();
       this.buildMenu();
 
@@ -297,6 +303,7 @@ var Artwork = function () {
 
       // draw Art
       this.nailsAndStringDrawer.draw();
+      this.imgurGallery.setUploadButtonStatus('ready');
     }
 
     // Helper Function to clear the SVG
@@ -2536,6 +2543,219 @@ function degrees2radian (deg) {
 
 /***/ }),
 /* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var ImgurGallery = function () {
+  function ImgurGallery(svg) {
+    _classCallCheck(this, ImgurGallery);
+
+    this.svg = svg;
+    this.apiUrlAlbum = 'https://api.imgur.com/3/album';
+    this.apiUrlImage = 'https://api.imgur.com/3/image';
+    this.imgurAplicationId = 'aa207e17df166f0';
+    this.album = 'GOHHC';
+    this.albumUploadReference = 'sK95kmHqbqE7HQd';
+
+    this.fetchAlbumDataAndRedrawGallery();
+  }
+
+  _createClass(ImgurGallery, [{
+    key: 'fetchAlbumDataAndRedrawGallery',
+    value: function fetchAlbumDataAndRedrawGallery() {
+      var _this = this;
+
+      var settings = {
+        async: false,
+        mode: 'cors',
+        method: 'GET',
+        headers: {
+          Authorization: 'Client-ID ' + this.imgurAplicationId,
+          Accept: 'application/json'
+        }
+      };
+
+      fetch(this.apiUrlAlbum + '/' + this.album, settings).then(function (response) {
+        return response.json();
+      }).then(function (json) {
+        _this.images = json.data.images;
+        _this.redrawGallery();
+      });
+    }
+  }, {
+    key: 'buildPngAndUpload',
+    value: function buildPngAndUpload() {
+      var _this2 = this;
+
+      this.setUploadButtonStatus('loading');
+
+      var canvas = document.createElement('canvas');
+      canvas.width = this.svg.getAttribute('width');
+      canvas.height = this.svg.getAttribute('height');
+      var ctx = canvas.getContext('2d');
+
+      var svgData = new XMLSerializer().serializeToString(this.svg);
+
+      var DOMURL = window.URL || window.webkitURL || window;
+
+      var img = new Image();
+      var svg = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      var url = DOMURL.createObjectURL(svg);
+
+      img.onload = function () {
+        ctx.drawImage(img, 0, 0);
+        DOMURL.revokeObjectURL(url);
+        _this2.uploadToImgur(canvas.toDataURL('image/png'));
+      };
+      img.src = url;
+    }
+  }, {
+    key: 'uploadToImgur',
+    value: function uploadToImgur(dataurl) {
+      var _this3 = this;
+
+      // Create Data Blob
+      var arr = dataurl.split(','),
+          mime = arr[0].match(/:(.*?);/)[1],
+          bstr = atob(arr[1]),
+          n = bstr.length,
+          u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var dataBlob = new Blob([u8arr], { type: mime });
+
+      // Build FormData to upload Image to Imgur
+      var formData = new FormData();
+      formData.append("type", "file");
+      formData.append("image", dataBlob);
+      formData.append("name", "VectorPicasoTest");
+      formData.append("album", this.albumUploadReference);
+
+      // Request Settings
+      var settings = {
+        async: false,
+        mode: 'cors',
+        method: 'POST',
+        headers: {
+          Authorization: 'Client-ID ' + this.imgurAplicationId,
+          Accept: 'application/json'
+        },
+        mimeType: 'multipart/form-data',
+        body: formData
+      };
+
+      // Upload Image to Imgur
+      fetch(this.apiUrlImage, settings).then(function (response) {
+        _this3.setUploadButtonStatus('done');
+        // fetch new Gallery Data
+        _this3.fetchAlbumDataAndRedrawGallery();
+      });
+    }
+  }, {
+    key: 'redrawGallery',
+    value: function redrawGallery() {
+      var body = document.querySelector('body');
+      var imgurGallery = document.querySelector('#imgurGallery');
+
+      if (imgurGallery) {
+        body.removeChild(imgurGallery);
+      }
+
+      imgurGallery = document.createElement('div');
+      imgurGallery.id = 'imgurGallery';
+      body.appendChild(imgurGallery);
+
+      var element = document.createElement('h4');
+      element.innerText = 'Recent Uploads:';
+      imgurGallery.appendChild(element);
+
+      element = document.createElement('p');
+      element.innerHTML = 'You find all uploaded Artworks in this <a href="https://imgur.com/a/GOHHC" target="_blank">Imgur Album</a>.';
+      imgurGallery.appendChild(element);
+
+      for (var i = 0; i < this.images.length && i < 4; i += 1) {
+        element = document.createElement('img');
+        element.setAttribute('src', this.images[this.images.length - (1 + i)].link);
+        imgurGallery.appendChild(element);
+      }
+    }
+
+    // Ugly and long code to create the Menu
+
+  }, {
+    key: 'buildMenu',
+    value: function buildMenu() {
+      var _this4 = this;
+
+      var menu = document.querySelector('#menu');
+      var myMenu = document.createElement('div');
+      myMenu.id = 'imgurMenu';
+      menu.insertBefore(myMenu, menu.childNodes[0]);
+
+      var element = document.createElement('a');
+      element.id = 'uploadButton';
+      element.setAttribute('href', '#');
+      element.innerText = 'upload to imgur';
+      element.style.display = 'none';
+      element.addEventListener('click', function () {
+        _this4.buildPngAndUpload();
+      });
+      myMenu.appendChild(element);
+
+      element = document.createElement('p');
+      element.id = 'uploadingInfo';
+      element.innerText = '...waiting for an Image';
+      element.style.display = 'initial';
+      myMenu.appendChild(element);
+    }
+  }, {
+    key: 'setUploadButtonStatus',
+    value: function setUploadButtonStatus(status) {
+      var uploadButton = document.querySelector('#uploadButton');
+      var infoText = document.querySelector('#uploadingInfo');
+
+      switch (status) {
+        case 'ready':
+          uploadButton.style.display = 'block';
+          infoText.style.display = 'none';
+          break;
+        case 'loading':
+          uploadButton.style.display = 'none';
+          infoText.innerText = '...uploading';
+          infoText.style.display = 'initial';
+          break;
+        case 'done':
+          uploadButton.style.display = 'none';
+          infoText.innerText = 'Upload Succesfull';
+          infoText.style.display = 'initial';
+          break;
+        case 'error':
+          uploadButton.style.display = 'none';
+          infoText.innerText = 'Uppss...';
+          infoText.style.display = 'initial';
+          break;
+      }
+    }
+  }]);
+
+  return ImgurGallery;
+}();
+
+exports.default = ImgurGallery;
+
+/***/ }),
+/* 10 */
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin

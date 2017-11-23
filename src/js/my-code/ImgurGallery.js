@@ -2,7 +2,6 @@
 class ImgurGallery {
 
   constructor(svg) {
-
     this.svg = svg;
     this.apiUrlAlbum = 'https://api.imgur.com/3/album';
     this.apiUrlImage = 'https://api.imgur.com/3/image';
@@ -13,7 +12,28 @@ class ImgurGallery {
     this.fetchAlbumDataAndRedrawGallery();
   }
 
-  buildPngFromSvg(){
+  fetchAlbumDataAndRedrawGallery(){
+    var settings = {
+      async: false,
+      mode: 'cors',
+      method: 'GET',
+      headers: {
+        Authorization: 'Client-ID ' + this.imgurAplicationId,
+        Accept: 'application/json',
+      },
+    };
+
+    fetch(`${this.apiUrlAlbum}/${this.album}`, settings)
+    .then((response) => response.json())
+    .then((json) =>{
+      this.images = json.data.images;
+      this.redrawGallery();
+    });
+  }
+
+  buildPngAndUpload(){
+
+    this.setUploadButtonStatus('loading');
 
     var canvas = document.createElement('canvas');
     canvas.width=this.svg.getAttribute('width');
@@ -67,33 +87,21 @@ class ImgurGallery {
 
     // Upload Image to Imgur
     fetch(this.apiUrlImage, settings).then((response) =>{
+      this.setUploadButtonStatus('done');
       // fetch new Gallery Data
       this.fetchAlbumDataAndRedrawGallery();
     });
   }
 
-  fetchAlbumDataAndRedrawGallery(){
-    var settings = {
-      async: false,
-      mode: 'cors',
-      method: 'GET',
-      headers: {
-        Authorization: 'Client-ID ' + this.imgurAplicationId,
-        Accept: 'application/json',
-      },
-    };
-
-    fetch(`${this.apiUrlAlbum}/${this.album}`, settings)
-    .then((response) => response.json())
-    .then((json) =>{
-      this.images = json.data.images;
-      this.redrawGallery();
-    });
-  }
-
   redrawGallery() {
     const body = document.querySelector('body');
-    const imgurGallery = document.createElement('div');
+    let imgurGallery = document.querySelector('#imgurGallery');
+
+    if(imgurGallery) {
+      body.removeChild(imgurGallery);
+    }
+
+    imgurGallery = document.createElement('div');
     imgurGallery.id = 'imgurGallery';
     body.appendChild(imgurGallery);
 
@@ -120,13 +128,51 @@ class ImgurGallery {
       menu.insertBefore(myMenu, menu.childNodes[0]);
   
       let element = document.createElement('a');
+      element.id = 'uploadButton';
       element.setAttribute('href', '#');
       element.innerText = 'upload to imgur';
+      element.style.display='none';
       element.addEventListener('click', () => {
-        this.buildPngFromSvg();
+        this.buildPngAndUpload();
       });
       myMenu.appendChild(element);
+
+      element = document.createElement('p');
+      element.id = 'uploadingInfo';
+      element.innerText = '...waiting for an Image';
+      element.style.display='initial';
+      myMenu.appendChild(element);
     }
+
+    setUploadButtonStatus(status){
+      const uploadButton = document.querySelector('#uploadButton');
+      const infoText = document.querySelector('#uploadingInfo');
+
+      switch(status){
+        case 'ready':
+          uploadButton.style.display='block';
+          infoText.style.display='none';
+        break;
+        case 'loading':
+          uploadButton.style.display='none';
+          infoText.innerText = '...uploading';
+          infoText.style.display='initial';
+        break;
+        case 'done':
+          uploadButton.style.display='none';
+          infoText.innerText = 'Upload Succesfull';
+          infoText.style.display='initial';
+        break;
+        case 'error':
+          uploadButton.style.display='none';
+          infoText.innerText = 'Uppss...';
+          infoText.style.display='initial';
+        break;
+      }
+
+    }
+
+
 }
 
 export default ImgurGallery;

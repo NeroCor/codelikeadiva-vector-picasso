@@ -1,4 +1,4 @@
-/******/ (function(modules) { // webpackBootstrap
+﻿/******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -232,7 +232,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 var config = {
-  author: 'Andreas Wolf',
+  author: 'Andreas 🐺',
   title: 'Bezier Abstraction',
   instructions: 'First you choose a Source Image. <br/> <br/> This image will then get triangulated and drawen as a Background (no Magic). <br/><br/> After this first triangulation a second triangulation will be performed, but with slightly changed parameters. The Algorithm of drawing the Lines inside these Triangles, is the same as the Algorithm which is used to draw <a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Constructing_B.C3.A9zier_curves" target="_blank">Quadratic Bezier Curves</a>. <br/>This Mesh of Lines atop of the triangulation gives the Artwork the feeling of depth and detail. <br/><br/> Bonus:<br/> You can upload your Image into a Imgur Album'
 };
@@ -2572,7 +2572,7 @@ var ImgurGallery = function () {
     value: function buildPngAndUpload() {
       var _this2 = this;
 
-      this.setUploadButtonStatus('loading');
+      ImgurGallery.setUploadButtonStatus('loading');
 
       var canvas = document.createElement('canvas');
       canvas.width = this.svg.getAttribute('width');
@@ -2596,10 +2596,53 @@ var ImgurGallery = function () {
       img.src = url;
     }
   }, {
-    key: 'redrawGallery',
+    key: 'uploadToImgur',
+    value: function uploadToImgur(dataurl) {
+      var _this3 = this;
 
+      // Create Data Blob
+      var arr = dataurl.split(',');
+      var mime = arr[0].match(/:(.*?);/)[1];
+      var bstr = atob(arr[1]);
+      var n = bstr.length;
+      var u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var dataBlob = new Blob([u8arr], { type: mime });
+
+      // Build FormData to upload Image to Imgur
+      var formData = new FormData();
+      formData.append('type', 'file');
+      formData.append('image', dataBlob);
+      formData.append('title', this.title.value || '');
+      formData.append('album', this.albumUploadReference);
+
+      // Request Settings
+      var settings = {
+        async: false,
+        mode: 'cors',
+        method: 'POST',
+        headers: {
+          Authorization: 'Client-ID ' + this.imgurAplicationId,
+          Accept: 'application/json'
+        },
+        mimeType: 'multipart/form-data',
+        body: formData
+      };
+
+      // Upload Image to Imgur
+      fetch(this.apiUrlImage, settings).then(function () {
+        ImgurGallery.setUploadButtonStatus('done');
+        // fetch new Gallery Data
+        _this3.fetchAlbumDataAndRedrawGallery();
+      });
+    }
 
     // Ugly and long function to draw the right Gallery
+
+  }, {
+    key: 'redrawGallery',
     value: function redrawGallery() {
       var body = document.querySelector('body');
       var imgurGallery = document.querySelector('#imgurGallery');
@@ -2643,7 +2686,7 @@ var ImgurGallery = function () {
   }, {
     key: 'buildMenu',
     value: function buildMenu() {
-      var _this3 = this;
+      var _this4 = this;
 
       var menu = document.querySelector('#menu');
       var myMenu = document.createElement('div');
@@ -2673,7 +2716,7 @@ var ImgurGallery = function () {
       element.innerText = 'upload to imgur';
       element.style.display = 'none';
       element.addEventListener('click', function () {
-        _this3.buildPngAndUpload();
+        _this4.buildPngAndUpload();
       });
       myMenu.appendChild(element);
 
@@ -2687,49 +2730,6 @@ var ImgurGallery = function () {
     // indicates the current upload State
 
   }], [{
-    key: 'uploadToImgur',
-    value: function uploadToImgur(dataurl) {
-      var _this4 = this;
-
-      // Create Data Blob
-      var arr = dataurl.split(',');
-      var mime = arr[0].match(/:(.*?);/)[1];
-      var bstr = atob(arr[1]);
-      var n = bstr.length;
-      var u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      var dataBlob = new Blob([u8arr], { type: mime });
-
-      // Build FormData to upload Image to Imgur
-      var formData = new FormData();
-      formData.append('type', 'file');
-      formData.append('image', dataBlob);
-      formData.append('title', this.title.value || '');
-      formData.append('album', this.albumUploadReference);
-
-      // Request Settings
-      var settings = {
-        async: false,
-        mode: 'cors',
-        method: 'POST',
-        headers: {
-          Authorization: 'Client-ID ' + this.imgurAplicationId,
-          Accept: 'application/json'
-        },
-        mimeType: 'multipart/form-data',
-        body: formData
-      };
-
-      // Upload Image to Imgur
-      fetch(this.apiUrlImage, settings).then(function () {
-        ImgurGallery.setUploadButtonStatus('done');
-        // fetch new Gallery Data
-        _this4.fetchAlbumDataAndRedrawGallery();
-      });
-    }
-  }, {
     key: 'setUploadButtonStatus',
     value: function setUploadButtonStatus(status) {
       var titleLabel = document.querySelector('#titleLabel');

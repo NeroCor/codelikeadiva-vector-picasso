@@ -32,7 +32,7 @@ class ImgurGallery {
   }
 
   buildPngAndUpload() {
-    this.setUploadButtonStatus('loading');
+    ImgurGallery.setUploadButtonStatus('loading');
 
     const canvas = document.createElement('canvas');
     canvas.width = this.svg.getAttribute('width');
@@ -56,7 +56,7 @@ class ImgurGallery {
     img.src = url;
   }
 
-  static uploadToImgur(dataurl) {
+  uploadToImgur(dataurl) {
     // Create Data Blob
     const arr = dataurl.split(',');
     const mime = arr[0].match(/:(.*?);/)[1];

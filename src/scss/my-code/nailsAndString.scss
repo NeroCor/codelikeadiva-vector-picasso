@@ -10,15 +10,29 @@
 
 #nailsAndLinesMenu{
   text-align: left;
-  display: grid;
-  grid-template-columns:  7rem 7rem;
 
-  h4{
-    grid-column-start: 1;
-    grid-column-end: 3;
-  }
-
-  input[type=range]::-webkit-slider-runnable-track{
-    background: black;
+  #optionsContainer {
+    display: grid;
+    grid-template-columns:  7rem 7rem;
+    transition: max-height 1s ease-in-out 0.5s;
+    max-height: 0;
+    overflow: hidden;
+  
+    h4{
+      grid-column-start: 1;
+      grid-column-end: 3;
+    }
+  
+    input[type=range]::-webkit-slider-runnable-track{
+      background: black;
+    }
   }
 }
+
+#nailsAndLinesMenu:hover{
+
+  #optionsContainer {
+    max-height: 50rem;
+  }
+}
+

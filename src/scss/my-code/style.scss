@@ -1,6 +1,25 @@
 @import "./imgurGallery.scss";
 @import "./nailsAndString.scss";
 
-a{
+a, input, label{
   margin-bottom: 0.2rem;
+}
+
+h3 {
+  text-align: right;
+}
+
+#menu{
+  transform:translateX(-50%);
+  transition: transform 0.5s ease-in-out 2s;
+}
+
+#imgurGallery{
+  transform:translateX(50%);
+  transition: transform 0.5s ease-in-out 2s;
+}
+
+#imgurGallery:hover, #menu:hover{
+  transform:translateX(0);
+  transition-delay: 0s;
 }

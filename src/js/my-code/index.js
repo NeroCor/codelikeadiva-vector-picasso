@@ -4,18 +4,16 @@ import ImgurGallery from './ImgurGallery';
 class Artwork {
   constructor() {
     this.svg = document.querySelector('svg');
-
     this.srcImage = new Image();
 
-    // My Art Class in it you find the render logic
-    this.nailsAndStringDrawer = new NailsAndStringDrawer(this.svg, this.srcImage);
+    // Imgur Upload Features
     this.imgurGallery = new ImgurGallery(this.svg);
+    // My Art Class, here you find the render logic
+    this.nailsAndStringDrawer = new NailsAndStringDrawer(this.svg, this.srcImage);
   }
 
   init() {
     // add controll Fields to Menu
-    this.imgurGallery.buildMenu();
-    this.nailsAndStringDrawer.buildMenu();
     this.buildMenu();
 
     // clear SVG
@@ -31,7 +29,6 @@ class Artwork {
 
     // draw Art
     this.nailsAndStringDrawer.draw();
-    this.imgurGallery.setUploadButtonStatus('ready');
   }
 
   // Helper Function to clear the SVG
@@ -57,7 +54,8 @@ class Artwork {
         const maxHeight = this.svg.height.baseVal.value;
         const maxWidthScaleRatio = maxWidth / img.width;
         const maxheightScaleRatio = maxHeight / img.height;
-        const scaleRatio = maxWidthScaleRatio < maxheightScaleRatio ? maxWidthScaleRatio : maxheightScaleRatio;
+        const scaleRatio = maxWidthScaleRatio < maxheightScaleRatio ?
+          maxWidthScaleRatio : maxheightScaleRatio;
         img.width *= scaleRatio;
         img.height *= scaleRatio;
 
@@ -70,6 +68,8 @@ class Artwork {
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0, img.width, img.height);
         this.srcImage.src = canvas.toDataURL('image/png');
+
+        ImgurGallery.setUploadButtonStatus('ready');
       };
     };
     fr.readAsDataURL(this.inputField.files[0]);
@@ -83,7 +83,7 @@ class Artwork {
     menu.insertBefore(myMenu, menu.childNodes[0]);
 
     // File Input
-    let element = document.createElement('h4');
+    let element = document.createElement('h3');
     element.innerText = 'Source Image';
     myMenu.appendChild(element);
     element = document.createElement('input');

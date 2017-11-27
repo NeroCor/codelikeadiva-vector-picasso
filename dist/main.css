@@ -4,11 +4,35 @@
   right: 0;
   width: 15rem;
   height: auto;
+  max-height: 85vh;
   padding: 20px;
+  overflow-y: scroll;
+  text-align: left;
   background-color: rgba(211, 211, 211, 0.7); }
   #imgurGallery img {
     width: 100%;
     height: auto; }
+  #imgurGallery a {
+    position: relative;
+    text-align: center; }
+  #imgurGallery .image-title {
+    position: absolute;
+    padding: 0.1rem;
+    bottom: 0.5rem;
+    margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0;
+    text-decoration: none;
+    background-color: black;
+    color: white;
+    width: auto; }
+
+#imgurMenu {
+  text-align: left;
+  margin-bottom: 0.4rem; }
+  #imgurMenu a {
+    text-align: center; }
 
 #artwork-wrapper {
   display: flex;
@@ -19,17 +43,39 @@
   text-align: left; }
 
 #nailsAndLinesMenu {
-  text-align: left;
-  display: grid;
-  grid-template-columns: 7rem 7rem; }
-  #nailsAndLinesMenu h4 {
-    grid-column-start: 1;
-    grid-column-end: 3; }
-  #nailsAndLinesMenu input[type=range]::-webkit-slider-runnable-track {
-    background: black; }
+  text-align: left; }
+  #nailsAndLinesMenu #optionsContainer {
+    display: grid;
+    grid-template-columns: 7rem 7rem;
+    transition: max-height 1s ease-in-out 0.5s;
+    max-height: 0;
+    overflow: hidden; }
+    #nailsAndLinesMenu #optionsContainer h4 {
+      grid-column-start: 1;
+      grid-column-end: 3; }
+    #nailsAndLinesMenu #optionsContainer input[type=range]::-webkit-slider-runnable-track {
+      background: black; }
 
-a {
+#nailsAndLinesMenu:hover #optionsContainer {
+  max-height: 50rem; }
+
+a, input, label {
   margin-bottom: 0.2rem; }
+
+h3 {
+  text-align: right; }
+
+#menu {
+  transform: translateX(-50%);
+  transition: transform 0.5s ease-in-out 2s; }
+
+#imgurGallery {
+  transform: translateX(50%);
+  transition: transform 0.5s ease-in-out 2s; }
+
+#imgurGallery:hover, #menu:hover {
+  transform: translateX(0);
+  transition-delay: 0s; }
 
 html {
   padding: 0;

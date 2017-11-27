@@ -1,18 +1,18 @@
-import triangulate from './lib/triangulate-image-browser.es6.min.js';
 import Victor from 'victor';
+import triangulate from './lib/triangulate-image-browser.es6.min';
 
 class NailsAndStringDrawer {
   constructor(svg, srcImage) {
     this.svg = svg;
-
     this.srcImage = srcImage;
-
     this.numLines = 5;
+
+    this.buildMenu();
   }
 
   draw() {
     this.clearSVG();
-    let params = {
+    const params = {
       blur: Number(this.blur.value),
       accuracy: Number(this.accuracy.value),
       vertexCount: Number(this.vertexCount.value),
@@ -23,32 +23,15 @@ class NailsAndStringDrawer {
     triangulatedImage.toSVG().then((data) => {
       this.svg.innerHTML = data;
 
-      
       // Cool Bézier Line calculations with slightly changed Triangulation Options
-      params.accuracy = params.accuracy + Number(this.lineDeviation.value);
+      params.accuracy += Number(this.lineDeviation.value);
       triangulatedImage = triangulate(params).fromImage(this.srcImage);
-      triangulatedImage.toData().then(
-        (triangulationData) => {
-          let lines = triangulationData.map(triangle => this.generateLines(triangle));
-          lines = [].concat(...lines);
-          const svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
-          svgLines.map(svgLine => this.svg.appendChild(svgLine));
-        }
-      );
-
-      // Draw a second layer of Lines if choosen
-      if(this.doubleLines.checked){
-        params.accuracy = params.accuracy - (2 * Number(this.lineDeviation.value));
-        triangulatedImage = triangulate(params).fromImage(this.srcImage);
-        triangulatedImage.toData().then(
-          (triangulationData) => {
-            let lines = triangulationData.map(triangle => this.generateLines(triangle));
-            lines = [].concat(...lines);
-            const svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
-            svgLines.map(svgLine => this.svg.appendChild(svgLine));
-          }
-        );
-      }
+      triangulatedImage.toData().then((triangulationData) => {
+        let lines = triangulationData.map(triangle => this.generateLines(triangle));
+        lines = [].concat(...lines);
+        const svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
+        svgLines.map(svgLine => this.svg.appendChild(svgLine));
+      });
     });
   }
 
@@ -60,9 +43,15 @@ class NailsAndStringDrawer {
     const c = new Victor(triangle.c.x, triangle.c.y);
 
     // Get subvectors between corners dependent on the given Line Count
-    const abStepSice = (new Victor(b.x, b.y).subtract(a)).divide(new Victor(this.numLines, this.numLines));
-    const bcStepSice = (new Victor(c.x, c.y).subtract(b)).divide(new Victor(this.numLines, this.numLines));
-    const caStepSice = (new Victor(a.x, a.y).subtract(c)).divide(new Victor(this.numLines, this.numLines));
+    const abStepSice = (new Victor(b.x, b.y)
+      .subtract(a))
+      .divide(new Victor(this.numLines, this.numLines));
+    const bcStepSice = (new Victor(c.x, c.y)
+      .subtract(b))
+      .divide(new Victor(this.numLines, this.numLines));
+    const caStepSice = (new Victor(a.x, a.y)
+      .subtract(c))
+      .divide(new Victor(this.numLines, this.numLines));
 
     let lines = [];
 
@@ -71,18 +60,30 @@ class NailsAndStringDrawer {
       lines = [
         ...lines,
         NailsAndStringDrawer.generateLine(
-          new Victor(a.x, a.y).add(new Victor(abStepSice.x, abStepSice.y).multiply(new Victor(i, i))),
-          new Victor(b.x, b.y).add(new Victor(bcStepSice.x, bcStepSice.y).multiply(new Victor(i, i))),
+          new Victor(a.x, a.y)
+            .add(new Victor(abStepSice.x, abStepSice.y)
+              .multiply(new Victor(i, i))),
+          new Victor(b.x, b.y)
+            .add(new Victor(bcStepSice.x, bcStepSice.y)
+              .multiply(new Victor(i, i))),
           triangle.fill,
         ),
         NailsAndStringDrawer.generateLine(
-          new Victor(b.x, b.y).add(new Victor(bcStepSice.x, bcStepSice.y).multiply(new Victor(i, i))),
-          new Victor(c.x, c.y).add(new Victor(caStepSice.x, caStepSice.y).multiply(new Victor(i, i))),
+          new Victor(b.x, b.y)
+            .add(new Victor(bcStepSice.x, bcStepSice.y)
+              .multiply(new Victor(i, i))),
+          new Victor(c.x, c.y)
+            .add(new Victor(caStepSice.x, caStepSice.y)
+              .multiply(new Victor(i, i))),
           triangle.fill,
         ),
         NailsAndStringDrawer.generateLine(
-          new Victor(c.x, c.y).add(new Victor(caStepSice.x, caStepSice.y).multiply(new Victor(i, i))),
-          new Victor(a.x, a.y).add(new Victor(abStepSice.x, abStepSice.y).multiply(new Victor(i, i))),
+          new Victor(c.x, c.y)
+            .add(new Victor(caStepSice.x, caStepSice.y)
+              .multiply(new Victor(i, i))),
+          new Victor(a.x, a.y)
+            .add(new Victor(abStepSice.x, abStepSice.y)
+              .multiply(new Victor(i, i))),
           triangle.fill,
         ),
       ];
@@ -90,7 +91,7 @@ class NailsAndStringDrawer {
     return lines;
   }
 
-  // Helper Function to create Line Objects 
+  // Helper Function to create Line Objects
   static generateLine(vic1, vic2, color) {
     return {
       a: {
@@ -125,15 +126,24 @@ class NailsAndStringDrawer {
     myMenu.id = 'nailsAndLinesMenu';
     menu.insertBefore(myMenu, menu.childNodes[0]);
 
-    // Triangulation Options
-    let element = document.createElement('h4');
-    element.innerText = 'Triangulation Options';
+    let element = document.createElement('span');
+    element.innerText = 'Hover me for more Options';
     myMenu.appendChild(element);
+
+    const optionsContainer = document.createElement('div');
+    optionsContainer.id = 'optionsContainer';
+    myMenu.appendChild(optionsContainer);
+
+
+    // Triangulation Options
+    element = document.createElement('h4');
+    element.innerText = 'Triangulation Options';
+    optionsContainer.appendChild(element);
 
     element = document.createElement('label');
     element.setAttribute('for', 'accuracy');
     element.innerText = 'Accuracy:';
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
     element = document.createElement('input');
     element.setAttribute('type', 'range');
     element.setAttribute('name', 'accuracy');
@@ -143,12 +153,12 @@ class NailsAndStringDrawer {
     element.setAttribute('value', '0.7');
     element.addEventListener('change', () => this.draw());
     this.accuracy = element;
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
 
     element = document.createElement('label');
     element.setAttribute('for', 'blur');
     element.innerText = 'Blur:';
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
     element = document.createElement('input');
     element.setAttribute('type', 'range');
     element.setAttribute('name', 'blur');
@@ -158,12 +168,12 @@ class NailsAndStringDrawer {
     element.setAttribute('step', '1');
     element.addEventListener('change', () => this.draw());
     this.blur = element;
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
 
     element = document.createElement('label');
     element.setAttribute('for', 'vertexCount');
     element.innerText = 'Vertex Count:';
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
     element = document.createElement('input');
     element.setAttribute('type', 'number');
     element.setAttribute('name', 'vertexCount');
@@ -171,18 +181,18 @@ class NailsAndStringDrawer {
     element.setAttribute('value', '700');
     element.addEventListener('change', () => this.draw());
     this.vertexCount = element;
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
 
     element = document.createElement('hr');
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
 
     element = document.createElement('h4');
     element.innerText = 'Line Options';
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
     element = document.createElement('label');
     element.setAttribute('for', 'lineDeviation');
     element.innerText = 'Deviation:';
-    myMenu.appendChild(element);
+    optionsContainer.appendChild(element);
     element = document.createElement('input');
     element.setAttribute('type', 'range');
     element.setAttribute('name', 'lineDeviation');
@@ -192,21 +202,7 @@ class NailsAndStringDrawer {
     element.setAttribute('value', '0.02');
     element.addEventListener('change', () => this.draw());
     this.lineDeviation = element;
-    myMenu.appendChild(element);
-
-    element = document.createElement('label');
-    element.setAttribute('for', 'doubleLines');
-    element.innerText = '2xLines:';
-    myMenu.appendChild(element);
-    element = document.createElement('input');
-    element.setAttribute('type', 'checkbox');
-    element.setAttribute('name', 'doubleLines');
-    element.addEventListener('change', () => this.draw());
-    this.doubleLines = element;
-    myMenu.appendChild(element);
-    element = document.createElement('br');
-    myMenu.appendChild(element);
-
+    optionsContainer.appendChild(element);
 
     element = document.createElement('hr');
     myMenu.appendChild(element);

@@ -12,17 +12,17 @@ const pluginHtml = new HtmlWebpackPlugin({
 });
 
 const pluginExtractSass = new ExtractTextPlugin({
-  filename: '[name].css'
+  filename: '[name].css',
 });
 
 module.exports = {
   entry: [
     './src/js/index',
-    './src/scss/index.scss'
+    './src/scss/index.scss',
   ],
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'challenge.bundle.js'
+    filename: 'challenge.bundle.js',
   },
   module: {
     rules: [
@@ -32,45 +32,45 @@ module.exports = {
         loader: 'babel-loader',
         options: {
           presets: [
-            ["env", {
-              "targets": {
-                "browsers": ["last 2 versions"]
-              }
-            }]
+            ['env', {
+              targets: {
+                browsers: ['last 2 versions'],
+              },
+            }],
           ],
-        }
+        },
       },
       {
         test: /\.scss$/,
         use: ExtractTextPlugin.extract({
           use: [
             {
-              loader: 'css-loader'
+              loader: 'css-loader',
             }, {
               loader: 'sass-loader',
               options: {
                 includePaths: [
-                  path.resolve(__dirname, './src/scss')
-                ]
-              }
-            }
+                  path.resolve(__dirname, './src/scss'),
+                ],
+              },
+            },
           ],
-          fallback: 'style-loader'
-        })
+          fallback: 'style-loader',
+        }),
       },
-    ]
+    ],
   },
   plugins: [
     pluginHtml,
-    pluginExtractSass
+    pluginExtractSass,
   ],
   devServer: {
-    contentBase: './dist'
+    contentBase: './dist',
   },
   node: {
     console: false,
     fs: 'empty',
     net: 'empty',
-    tls: 'empty'
+    tls: 'empty',
   },
 };

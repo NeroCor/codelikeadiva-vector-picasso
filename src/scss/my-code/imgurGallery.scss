@@ -4,11 +4,42 @@
   right: 0;
   width: 15rem;
   height: auto;
+  max-height: 85vh;
   padding: 20px;
+  overflow-y: scroll;
+  text-align: left;
   background-color: rgba(lightgrey, 0.7);
 
   img{
     width: 100%;
     height: auto;
+  }
+
+  a{
+    position: relative;
+    text-align: center;
+  }
+
+  .image-title{
+    position: absolute;
+    padding: 0.1rem;
+    bottom: 0.5rem;
+    margin-left: auto;
+    margin-right: auto;
+    left: 0;
+    right: 0;
+    text-decoration: none;
+    background-color: black;
+    color: white;
+    width: auto;
+  }
+}
+
+#imgurMenu{
+  text-align: left;
+  margin-bottom: 0.4rem;
+
+  a{
+    text-align: center;
   }
 }

@@ -232,9 +232,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 var config = {
-  author: "Andreas Wolf",
-  title: "Bezier Abstraction",
-  instructions: 'First you choose an Source Image. <br/> <br/> This image will then get triangulated and drawen as an Background (no Magic). <br/><br/> After this first triangulation a second triangulation will be performed, but with slightly changed parameters. The Algorithm of drawing the Lines inside these Triangles, is the same as the Algorithm which is used to draw <a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Constructing_B.C3.A9zier_curves" target="_blank">Quadratic Bezier Curves</a>. <br/>This Mesh of Lines atop of the triangulation gives the Artwork the feeling of depth and details. <br/><br/> Bonus:<br/> You can upload your Image into an Imgur Album'
+  author: 'Andreas Wolf',
+  title: 'Bezier Abstraction',
+  instructions: 'First you choose a Source Image. <br/> <br/> This image will then get triangulated and drawen as a Background (no Magic). <br/><br/> After this first triangulation a second triangulation will be performed, but with slightly changed parameters. The Algorithm of drawing the Lines inside these Triangles, is the same as the Algorithm which is used to draw <a href="https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Constructing_B.C3.A9zier_curves" target="_blank">Quadratic Bezier Curves</a>. <br/>This Mesh of Lines atop of the triangulation gives the Artwork the feeling of depth and detail. <br/><br/> Bonus:<br/> You can upload your Image into a Imgur Album'
 };
 
 exports.default = config;
@@ -269,12 +269,12 @@ var Artwork = function () {
     _classCallCheck(this, Artwork);
 
     this.svg = document.querySelector('svg');
-
     this.srcImage = new Image();
 
-    // My Art Class in it you find the render logic
-    this.nailsAndStringDrawer = new _NailsAndStringDrawer2.default(this.svg, this.srcImage);
+    // Imgur Upload Features
     this.imgurGallery = new _ImgurGallery2.default(this.svg);
+    // My Art Class, here you find the render logic
+    this.nailsAndStringDrawer = new _NailsAndStringDrawer2.default(this.svg, this.srcImage);
   }
 
   _createClass(Artwork, [{
@@ -283,8 +283,6 @@ var Artwork = function () {
       var _this = this;
 
       // add controll Fields to Menu
-      this.imgurGallery.buildMenu();
-      this.nailsAndStringDrawer.buildMenu();
       this.buildMenu();
 
       // clear SVG
@@ -303,7 +301,6 @@ var Artwork = function () {
 
       // draw Art
       this.nailsAndStringDrawer.draw();
-      this.imgurGallery.setUploadButtonStatus('ready');
     }
 
     // Helper Function to clear the SVG
@@ -350,6 +347,8 @@ var Artwork = function () {
           canvas.height = img.height;
           ctx.drawImage(img, 0, 0, img.width, img.height);
           _this2.srcImage.src = canvas.toDataURL('image/png');
+
+          _ImgurGallery2.default.setUploadButtonStatus('ready');
         };
       };
       fr.readAsDataURL(this.inputField.files[0]);
@@ -368,7 +367,7 @@ var Artwork = function () {
       menu.insertBefore(myMenu, menu.childNodes[0]);
 
       // File Input
-      var element = document.createElement('h4');
+      var element = document.createElement('h3');
       element.innerText = 'Source Image';
       myMenu.appendChild(element);
       element = document.createElement('input');
@@ -402,13 +401,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _triangulateImageBrowserEs6Min = __webpack_require__(6);
-
-var _triangulateImageBrowserEs6Min2 = _interopRequireDefault(_triangulateImageBrowserEs6Min);
-
-var _victor = __webpack_require__(8);
+var _victor = __webpack_require__(6);
 
 var _victor2 = _interopRequireDefault(_victor);
+
+var _triangulateImageBrowserEs = __webpack_require__(7);
+
+var _triangulateImageBrowserEs2 = _interopRequireDefault(_triangulateImageBrowserEs);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -421,10 +420,10 @@ var NailsAndStringDrawer = function () {
     _classCallCheck(this, NailsAndStringDrawer);
 
     this.svg = svg;
-
     this.srcImage = srcImage;
-
     this.numLines = 5;
+
+    this.buildMenu();
   }
 
   _createClass(NailsAndStringDrawer, [{
@@ -440,13 +439,13 @@ var NailsAndStringDrawer = function () {
       };
 
       // Draw boring Triangulation
-      var triangulatedImage = (0, _triangulateImageBrowserEs6Min2.default)(params).fromImage(this.srcImage);
+      var triangulatedImage = (0, _triangulateImageBrowserEs2.default)(params).fromImage(this.srcImage);
       triangulatedImage.toSVG().then(function (data) {
         _this.svg.innerHTML = data;
 
         // Cool Bézier Line calculations with slightly changed Triangulation Options
-        params.accuracy = params.accuracy + Number(_this.lineDeviation.value);
-        triangulatedImage = (0, _triangulateImageBrowserEs6Min2.default)(params).fromImage(_this.srcImage);
+        params.accuracy += Number(_this.lineDeviation.value);
+        triangulatedImage = (0, _triangulateImageBrowserEs2.default)(params).fromImage(_this.srcImage);
         triangulatedImage.toData().then(function (triangulationData) {
           var _ref;
 
@@ -459,24 +458,6 @@ var NailsAndStringDrawer = function () {
             return _this.svg.appendChild(svgLine);
           });
         });
-
-        // Draw a second layer of Lines if choosen
-        if (_this.doubleLines.checked) {
-          params.accuracy = params.accuracy - 2 * Number(_this.lineDeviation.value);
-          triangulatedImage = (0, _triangulateImageBrowserEs6Min2.default)(params).fromImage(_this.srcImage);
-          triangulatedImage.toData().then(function (triangulationData) {
-            var _ref2;
-
-            var lines = triangulationData.map(function (triangle) {
-              return _this.generateLines(triangle);
-            });
-            lines = (_ref2 = []).concat.apply(_ref2, _toConsumableArray(lines));
-            var svgLines = NailsAndStringDrawer.linesToSVGLines(lines);
-            svgLines.map(function (svgLine) {
-              return _this.svg.appendChild(svgLine);
-            });
-          });
-        }
       });
     }
   }, {
@@ -501,7 +482,7 @@ var NailsAndStringDrawer = function () {
       return lines;
     }
 
-    // Helper Function to create Line Objects 
+    // Helper Function to create Line Objects
 
   }, {
     key: 'buildMenu',
@@ -516,15 +497,23 @@ var NailsAndStringDrawer = function () {
       myMenu.id = 'nailsAndLinesMenu';
       menu.insertBefore(myMenu, menu.childNodes[0]);
 
-      // Triangulation Options
-      var element = document.createElement('h4');
-      element.innerText = 'Triangulation Options';
+      var element = document.createElement('span');
+      element.innerText = 'Hover me for more Options';
       myMenu.appendChild(element);
+
+      var optionsContainer = document.createElement('div');
+      optionsContainer.id = 'optionsContainer';
+      myMenu.appendChild(optionsContainer);
+
+      // Triangulation Options
+      element = document.createElement('h4');
+      element.innerText = 'Triangulation Options';
+      optionsContainer.appendChild(element);
 
       element = document.createElement('label');
       element.setAttribute('for', 'accuracy');
       element.innerText = 'Accuracy:';
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
       element = document.createElement('input');
       element.setAttribute('type', 'range');
       element.setAttribute('name', 'accuracy');
@@ -536,12 +525,12 @@ var NailsAndStringDrawer = function () {
         return _this2.draw();
       });
       this.accuracy = element;
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
 
       element = document.createElement('label');
       element.setAttribute('for', 'blur');
       element.innerText = 'Blur:';
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
       element = document.createElement('input');
       element.setAttribute('type', 'range');
       element.setAttribute('name', 'blur');
@@ -553,12 +542,12 @@ var NailsAndStringDrawer = function () {
         return _this2.draw();
       });
       this.blur = element;
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
 
       element = document.createElement('label');
       element.setAttribute('for', 'vertexCount');
       element.innerText = 'Vertex Count:';
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
       element = document.createElement('input');
       element.setAttribute('type', 'number');
       element.setAttribute('name', 'vertexCount');
@@ -568,18 +557,18 @@ var NailsAndStringDrawer = function () {
         return _this2.draw();
       });
       this.vertexCount = element;
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
 
       element = document.createElement('hr');
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
 
       element = document.createElement('h4');
       element.innerText = 'Line Options';
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
       element = document.createElement('label');
       element.setAttribute('for', 'lineDeviation');
       element.innerText = 'Deviation:';
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
       element = document.createElement('input');
       element.setAttribute('type', 'range');
       element.setAttribute('name', 'lineDeviation');
@@ -591,22 +580,7 @@ var NailsAndStringDrawer = function () {
         return _this2.draw();
       });
       this.lineDeviation = element;
-      myMenu.appendChild(element);
-
-      element = document.createElement('label');
-      element.setAttribute('for', 'doubleLines');
-      element.innerText = '2xLines:';
-      myMenu.appendChild(element);
-      element = document.createElement('input');
-      element.setAttribute('type', 'checkbox');
-      element.setAttribute('name', 'doubleLines');
-      element.addEventListener('change', function () {
-        return _this2.draw();
-      });
-      this.doubleLines = element;
-      myMenu.appendChild(element);
-      element = document.createElement('br');
-      myMenu.appendChild(element);
+      optionsContainer.appendChild(element);
 
       element = document.createElement('hr');
       myMenu.appendChild(element);
@@ -658,561 +632,6 @@ exports.default = NailsAndStringDrawer;
 
 /***/ }),
 /* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-/* WEBPACK VAR INJECTION */(function(global) {
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function createCommonjsModule(t, e) {
-  return e = { exports: {} }, t(e, e.exports), e.exports;
-}function copyImageDataWithCanvas(t) {
-  var e = new Canvas$1(t.width, t.height).getContext("2d");return e.putImageData(t, 0, 0), e.getImageData(0, 0, t.width, t.height);
-}function BlurStack() {
-  this.r = 0, this.g = 0, this.b = 0, this.a = 0, this.next = null;
-}function addVertex(t, e, a) {
-  var n = t + "|" + e;a[n] || (a[n] = { x: t, y: e }), n = null;
-}var clamp = function clamp(t, e, a) {
-  return t < e ? e : t > a ? a : t;
-},
-    clone = function clone(t) {
-  var e = !1;if (void 0 !== t) try {
-    e = JSON.parse(JSON.stringify(t));
-  } catch (t) {}return e;
-};
-var Canvas$1 = function () {
-  function Canvas$1() {
-    var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 300;
-    var e = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 150;
-
-    _classCallCheck(this, Canvas$1);
-
-    "undefined" == typeof window ? (this.canvasEl = { width: t, height: e }, this.ctx = null) : (this.canvasEl = document.createElement("canvas"), this.canvasEl.width = t, this.canvasEl.height = e, this.ctx = this.canvasEl.getContext("2d"));
-  }
-
-  _createClass(Canvas$1, [{
-    key: "getContext",
-    value: function getContext() {
-      return this.ctx;
-    }
-  }, {
-    key: "toDataURL",
-    value: function toDataURL(t, e, a) {
-      if ("function" != typeof a) return this.canvasEl.toDataURL(t, e);a(this.canvasEl.toDataURL(t, e));
-    }
-  }, {
-    key: "width",
-    get: function get() {
-      return this.canvasEl.width;
-    },
-    set: function set(t) {
-      this.canvasEl.width = t;
-    }
-  }, {
-    key: "height",
-    get: function get() {
-      return this.canvasEl.height;
-    },
-    set: function set(t) {
-      this.canvasEl.height = t;
-    }
-  }]);
-
-  return Canvas$1;
-}();
-
-"undefined" != typeof window && (Canvas$1.Image = Image);var makeCanvasAndContext = function makeCanvasAndContext(t, e, a, n) {
-  var o = !(!e || !e.backgroundColor) && e.backgroundColor,
-      r = new Canvas$1(t.width * a, t.height * a, n),
-      i = r.getContext("2d");return o && (i.fillStyle = o, i.fillRect(0, 0, t.width * a, t.height * a), i.fillStyle = "transparent"), { canvas: r, ctx: i };
-},
-    toColor = function toColor(t) {
-  var e = makeCanvasAndContext({ width: 1, height: 1 }, {}, 1, !0).ctx;e.fillStyle = t, e.fillRect(0, 0, 1, 1);var a = e.getImageData(0, 0, 1, 1).data;return { r: a[0], g: a[1], b: a[2], a: a[3] / 255 };
-},
-    defaultParams = { accuracy: .7, blur: 4, fill: !0, stroke: !0, strokeWidth: .5, lineJoin: "miter", vertexCount: 700, threshold: 50, transparentColor: !1 };var allowedLineJoins = ["miter", "round", "bevel"];var sanitizeInput = function sanitizeInput(t) {
-  return "object" != _typeof(t = clone(t)) && (t = {}), "number" != typeof t.accuracy || isNaN(t.accuracy) ? t.accuracy = defaultParams.accuracy : t.accuracy = clamp(t.accuracy, 0, 1), ("number" != typeof t.blur || isNaN(t.blur)) && (t.blur = defaultParams.blur), t.blur <= 0 && (t.blur = 1), "string" != typeof t.fill && "boolean" != typeof t.fill && (t.fill = defaultParams.fill), "string" != typeof t.stroke && "boolean" != typeof t.stroke && (t.stroke = defaultParams.stroke), ("number" != typeof t.strokeWidth || isNaN(t.strokeWidth)) && (t.strokeWidth = defaultParams.strokeWidth), "number" != typeof t.threshold || isNaN(t.threshold) ? t.threshold = defaultParams.threshold : t.threshold = clamp(t.threshold, 1, 100), "string" == typeof t.lineJoin && -1 !== allowedLineJoins.indexOf(t.lineJoin) || (t.lineJoin = defaultParams.lineJoin), t.gradients && t.fill ? t.gradients = !0 : t.gradients = !1, t.gradients && (("number" != typeof t.gradientStops || isNaN(t.gradientStops) || t.gradientStops < 2) && (t.gradientStops = 2), t.gradientStops = Math.round(t.gradientStops)), ("number" != typeof t.vertexCount || isNaN(t.vertexCount)) && (t.vertexCount = defaultParams.vertexCount), t.vertexCount <= 0 && (t.vertexCount = 1), "string" != typeof t.transparentColor && "boolean" != typeof t.transparentColor && (t.transparentColor = defaultParams.transparentColor), !0 === _typeof(t.transparentColor) && (t.transparentColor = !1), "string" == typeof t.transparentColor && (t.transparentColor = toColor(t.transparentColor)), t;
-},
-    fromImageToImageData = function fromImageToImageData(t) {
-  if (t instanceof HTMLImageElement) {
-    if (!t.naturalWidth || !t.naturalHeight || !1 === t.complete) throw new Error("This this image hasn't finished loading: " + t.src);var e = new Canvas$1(t.naturalWidth, t.naturalHeight),
-        a = e.getContext("2d");a.drawImage(t, 0, 0, e.width, e.height);var n = a.getImageData(0, 0, e.width, e.height);return n.data && n.data.length && (void 0 === n.width && (n.width = t.naturalWidth), void 0 === n.height && (n.height = t.naturalHeight)), n;
-  }throw new Error("This object does not seem to be an image.");
-};var objectAssign = Object.assign;var toRGBA = function toRGBA(t) {
-  var e = objectAssign({ a: 1 }, t);return "rgba(" + e.r + ", " + e.g + ", " + e.b + ", " + e.a + ")";
-},
-    drawPolygonsOnContext = function drawPolygonsOnContext(t, e, a, n) {
-  return n = n || 1, e.forEach(function (e, a) {
-    if (t.beginPath(), t.moveTo(e.a.x * n, e.a.y * n), t.lineTo(e.b.x * n, e.b.y * n), t.lineTo(e.c.x * n, e.c.y * n), t.lineTo(e.a.x * n, e.a.y * n), e.gradient) {
-      var _a = t.createLinearGradient(e.gradient.x1 * n, e.gradient.y1 * n, e.gradient.x2 * n, e.gradient.y2 * n),
-          o = e.gradient.colors.length - 1;e.gradient.colors.forEach(function (t, e) {
-        var n = toRGBA(t);_a.addColorStop(e / o, n);
-      }), t.fillStyle = _a, t.fill(), e.strokeWidth > 0 && (t.strokeStyle = _a, t.lineWidth = e.strokeWidth * n, t.lineJoin = e.lineJoin, t.stroke());
-    } else e.fill && (t.fillStyle = e.fill, t.fill()), e.strokeColor && (t.strokeStyle = e.strokeColor, t.lineWidth = e.strokeWidth * n, t.lineJoin = e.lineJoin, t.stroke());t.closePath();
-  }), t;
-},
-    polygonsToImageData = function polygonsToImageData(t, e, a) {
-  var n = a && a.dpr ? a.dpr : 1,
-      o = makeCanvasAndContext(e, a, n, !0).ctx;return drawPolygonsOnContext(o, t, e, n), o.getImageData(0, 0, e.width * n, e.height * n);
-},
-    polygonsToDataURL = function polygonsToDataURL(t, e, a) {
-  var n = a && a.dpr ? a.dpr : 1,
-      o = makeCanvasAndContext(e, a, n);return drawPolygonsOnContext(o.ctx, t, e, n), o.canvas.toDataURL();
-},
-    polygonsToSVG = function polygonsToSVG(t, e) {
-  var a = "";t.length && t[0].gradient && (a = "<defs>");var n = "";t.forEach(function (t, e) {
-    var o = t.a,
-        r = t.b,
-        i = t.c;
-    if (n += "<polygon points=\"" + o.x + "," + o.y + " " + r.x + "," + r.y + " " + i.x + "," + i.y + "\"", t.gradient) {
-      var _o = t.boundingBox,
-          _r = ((t.gradient.x1 - _o.x) / _o.width * 100).toFixed(3),
-          _i = ((t.gradient.y1 - _o.y) / _o.height * 100).toFixed(3),
-          s = ((t.gradient.x2 - _o.x) / _o.width * 100).toFixed(3),
-          l = ((t.gradient.y2 - _o.y) / _o.height * 100).toFixed(3);a += "\n\t<linearGradient id=\"gradient-" + e + "\" x1=\"" + _r + "%\" y1=\"" + _i + "%\" x2=\"" + s + "%\" y2=\"" + l + "%\">";var h = t.gradient.colors.length - 1;t.gradient.colors.forEach(function (t, e) {
-        var n = toRGBA(t),
-            o = (e / h * 100).toFixed(3);a += "\n\t\t\t\t\t<stop offset=\"" + o + "%\" stop-color=\"" + n + "\"/>\n\t\t\t\t";
-      }), a += "</linearGradient>", n += " fill=\"url(#gradient-" + e + ")\"", t.strokeWidth > 0 && (n += " stroke=\"url(#gradient-" + e + ")\" stroke-width=\"" + t.strokeWidth + "\" stroke-linejoin=\"" + t.lineJoin + "\"");
-    } else t.fill ? n += " fill=\"" + t.fill + "\"" : n += ' fill="transparent"', t.strokeColor && (n += " stroke=\"" + t.strokeColor + "\" stroke-width=\"" + t.strokeWidth + "\" stroke-linejoin=\"" + t.lineJoin + "\"");n += "/>\n\t";
-  }), a.length && (a += "\n\t\t</defs>");return "<?xml version=\"1.0\" standalone=\"yes\"?>\n<svg width=\"" + e.width + "\" height=\"" + e.height + "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" >\n\t" + a + "\n\t" + n + "\n</svg>";
-},
-    commonjsGlobal = "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self ? self : {},
-    delaunay = createCommonjsModule(function (t) {
-  function e(t, e, a) {
-    this.a = t, this.b = e, this.c = a;var n,
-        o,
-        r,
-        i,
-        s = e.x - t.x,
-        l = e.y - t.y,
-        h = a.x - t.x,
-        g = a.y - t.y,
-        d = s * (t.x + e.x) + l * (t.y + e.y),
-        c = h * (t.x + a.x) + g * (t.y + a.y),
-        u = 2 * (s * (a.y - e.y) - l * (a.x - e.x));Math.abs(u) < 1e-6 ? (n = Math.min(t.x, e.x, a.x), o = Math.min(t.y, e.y, a.y), r = .5 * (Math.max(t.x, e.x, a.x) - n), i = .5 * (Math.max(t.y, e.y, a.y) - o), this.x = n + r, this.y = o + i, this.r = r * r + i * i) : (this.x = (g * d - l * c) / u, this.y = (s * c - h * d) / u, r = this.x - t.x, i = this.y - t.y, this.r = r * r + i * i);
-  }function a(t, e) {
-    return e.x - t.x;
-  }function n(t) {
-    var e,
-        a,
-        n,
-        o,
-        r,
-        i = t.length;t: for (; i;) {
-      for (a = t[--i], e = t[--i], n = i; n;) {
-        if (r = t[--n], o = t[--n], e === o && a === r || e === r && a === o) {
-          t.splice(i, 2), t.splice(n, 2), i -= 2;continue t;
-        }
-      }
-    }
-  }function o(t) {
-    if (t.length < 3) return [];t.sort(a);for (var o = t.length - 1, r = t[o].x, i = t[0].x, s = t[o].y, l = s; o--;) {
-      t[o].y < s && (s = t[o].y), t[o].y > l && (l = t[o].y);
-    }var h,
-        g,
-        d,
-        c = i - r,
-        u = l - s,
-        y = c > u ? c : u,
-        f = .5 * (i + r),
-        p = .5 * (l + s),
-        m = [new e({ x: f - 20 * y, y: p - y, __sentinel: !0 }, { x: f, y: p + 20 * y, __sentinel: !0 }, { x: f + 20 * y, y: p - y, __sentinel: !0 })],
-        x = [],
-        w = [];for (o = t.length; o--;) {
-      for (w.length = 0, h = m.length; h--;) {
-        (c = t[o].x - m[h].x) > 0 && c * c > m[h].r ? (x.push(m[h]), m.splice(h, 1)) : c * c + (u = t[o].y - m[h].y) * u > m[h].r || (w.push(m[h].a, m[h].b, m[h].b, m[h].c, m[h].c, m[h].a), m.splice(h, 1));
-      }for (n(w), h = w.length; h;) {
-        d = w[--h], g = w[--h], m.push(new e(g, d, t[o]));
-      }
-    }for (Array.prototype.push.apply(x, m), o = x.length; o--;) {
-      (x[o].a.__sentinel || x[o].b.__sentinel || x[o].c.__sentinel) && x.splice(o, 1);
-    }return x;
-  }e.prototype.draw = function (t) {
-    t.beginPath(), t.moveTo(this.a.x, this.a.y), t.lineTo(this.b.x, this.b.y), t.lineTo(this.c.x, this.c.y), t.closePath(), t.stroke();
-  }, t.exports = { Triangle: e, triangulate: o };
-}),
-    delaunay_2 = delaunay.triangulate,
-    sobel = createCommonjsModule(function (t, e) {
-  !function (a) {
-    "use strict";
-    function n(t) {
-      function e(t) {
-        return function (e, a, n) {
-          return n = n || 0, t[4 * (r * a + e) + n];
-        };
-      }if (!(this instanceof n)) return new n(t);var a,
-          o,
-          r = t.width,
-          i = t.height,
-          s = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
-          l = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
-          h = [],
-          g = [],
-          d = e(t.data);for (o = 0; o < i; o++) {
-        for (a = 0; a < r; a++) {
-          var c = (d(a, o, 0) + d(a, o, 1) + d(a, o, 2)) / 3;g.push(c, c, c, 255);
-        }
-      }for (d = e(g), o = 0; o < i; o++) {
-        for (a = 0; a < r; a++) {
-          var u = s[0][0] * d(a - 1, o - 1) + s[0][1] * d(a, o - 1) + s[0][2] * d(a + 1, o - 1) + s[1][0] * d(a - 1, o) + s[1][1] * d(a, o) + s[1][2] * d(a + 1, o) + s[2][0] * d(a - 1, o + 1) + s[2][1] * d(a, o + 1) + s[2][2] * d(a + 1, o + 1),
-              y = l[0][0] * d(a - 1, o - 1) + l[0][1] * d(a, o - 1) + l[0][2] * d(a + 1, o - 1) + l[1][0] * d(a - 1, o) + l[1][1] * d(a, o) + l[1][2] * d(a + 1, o) + l[2][0] * d(a - 1, o + 1) + l[2][1] * d(a, o + 1) + l[2][2] * d(a + 1, o + 1),
-              f = Math.sqrt(u * u + y * y) >>> 0;h.push(f, f, f, 255);
-        }
-      }var p = h;return "function" == typeof Uint8ClampedArray && (p = new Uint8ClampedArray(h)), p.toImageData = function () {
-        return n.toImageData(p, r, i);
-      }, p;
-    }function o(t, e, a) {
-      return { width: e, height: a, data: t };
-    }n.toImageData = function (t, e, a) {
-      if ("function" == typeof ImageData && "[object Uint16Array]" === Object.prototype.toString.call(t)) return new ImageData(t, e, a);if ("object" == (typeof window === "undefined" ? "undefined" : _typeof(window)) && "object" == _typeof(window.document)) {
-        var n = document.createElement("canvas");if ("function" == typeof n.getContext) {
-          var r = n.getContext("2d").createImageData(e, a);return r.data.set(t), r;
-        }return new o(t, e, a);
-      }return new o(t, e, a);
-    }, t.exports && (e = t.exports = n), e.Sobel = n;
-  }();
-}),
-    isImageData = function isImageData(t) {
-  return t && "number" == typeof t.width && "number" == typeof t.height && t.data && "number" == typeof t.data.length && "object" == _typeof(t.data);
-},
-    copyImageData = function copyImageData(t) {
-  if (isImageData(t)) {
-    if ("undefined" == typeof Uint8ClampedArray) {
-      if ("undefined" == typeof window) throw new Error("Can't copy imageData in webworker without Uint8ClampedArray support.");return copyImageDataWithCanvas(t);
-    }{
-      var e = new Uint8ClampedArray(t.data);if ("undefined" == typeof ImageData) return { width: t.width, height: t.height, data: e };{
-        var a = void 0;try {
-          a = new ImageData(e, t.width, t.height);
-        } catch (e) {
-          if ("undefined" == typeof window) throw new Error("Can't copy imageData in webworker without proper ImageData() support.");a = copyImageDataWithCanvas(t);
-        }return a;
-      }
-    }
-  }throw new Error("Given imageData object is not useable.");
-};var mul_table = [512, 512, 456, 512, 328, 456, 335, 512, 405, 328, 271, 456, 388, 335, 292, 512, 454, 405, 364, 328, 298, 271, 496, 456, 420, 388, 360, 335, 312, 292, 273, 512, 482, 454, 428, 405, 383, 364, 345, 328, 312, 298, 284, 271, 259, 496, 475, 456, 437, 420, 404, 388, 374, 360, 347, 335, 323, 312, 302, 292, 282, 273, 265, 512, 497, 482, 468, 454, 441, 428, 417, 405, 394, 383, 373, 364, 354, 345, 337, 328, 320, 312, 305, 298, 291, 284, 278, 271, 265, 259, 507, 496, 485, 475, 465, 456, 446, 437, 428, 420, 412, 404, 396, 388, 381, 374, 367, 360, 354, 347, 341, 335, 329, 323, 318, 312, 307, 302, 297, 292, 287, 282, 278, 273, 269, 265, 261, 512, 505, 497, 489, 482, 475, 468, 461, 454, 447, 441, 435, 428, 422, 417, 411, 405, 399, 394, 389, 383, 378, 373, 368, 364, 359, 354, 350, 345, 341, 337, 332, 328, 324, 320, 316, 312, 309, 305, 301, 298, 294, 291, 287, 284, 281, 278, 274, 271, 268, 265, 262, 259, 257, 507, 501, 496, 491, 485, 480, 475, 470, 465, 460, 456, 451, 446, 442, 437, 433, 428, 424, 420, 416, 412, 408, 404, 400, 396, 392, 388, 385, 381, 377, 374, 370, 367, 363, 360, 357, 354, 350, 347, 344, 341, 338, 335, 332, 329, 326, 323, 320, 318, 315, 312, 310, 307, 304, 302, 299, 297, 294, 292, 289, 287, 285, 282, 280, 278, 275, 273, 271, 269, 267, 265, 263, 261, 259],
-    shg_table = [9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24];var stackblur = function stackblur(t, e, a, n, o, r) {
-  var i,
-      s,
-      l,
-      h,
-      g,
-      d,
-      c,
-      u,
-      y,
-      f,
-      p,
-      m,
-      x,
-      w,
-      b,
-      C,
-      v,
-      D,
-      k,
-      P,
-      I,
-      B,
-      _,
-      E,
-      S = t.data,
-      W = r + r + 1,
-      M = n - 1,
-      T = o - 1,
-      j = r + 1,
-      G = j * (j + 1) / 2,
-      $ = new BlurStack(),
-      J = $;for (l = 1; l < W; l++) {
-    if (J = J.next = new BlurStack(), l == j) var A = J;
-  }J.next = $;var U = null,
-      L = null;c = d = 0;var O = mul_table[r],
-      V = shg_table[r];for (s = 0; s < o; s++) {
-    for (C = v = D = k = u = y = f = p = 0, m = j * (P = S[d]), x = j * (I = S[d + 1]), w = j * (B = S[d + 2]), b = j * (_ = S[d + 3]), u += G * P, y += G * I, f += G * B, p += G * _, J = $, l = 0; l < j; l++) {
-      J.r = P, J.g = I, J.b = B, J.a = _, J = J.next;
-    }for (l = 1; l < j; l++) {
-      h = d + ((M < l ? M : l) << 2), u += (J.r = P = S[h]) * (E = j - l), y += (J.g = I = S[h + 1]) * E, f += (J.b = B = S[h + 2]) * E, p += (J.a = _ = S[h + 3]) * E, C += P, v += I, D += B, k += _, J = J.next;
-    }for (U = $, L = A, i = 0; i < n; i++) {
-      S[d + 3] = _ = p * O >> V, 0 != _ ? (_ = 255 / _, S[d] = (u * O >> V) * _, S[d + 1] = (y * O >> V) * _, S[d + 2] = (f * O >> V) * _) : S[d] = S[d + 1] = S[d + 2] = 0, u -= m, y -= x, f -= w, p -= b, m -= U.r, x -= U.g, w -= U.b, b -= U.a, h = c + ((h = i + r + 1) < M ? h : M) << 2, u += C += U.r = S[h], y += v += U.g = S[h + 1], f += D += U.b = S[h + 2], p += k += U.a = S[h + 3], U = U.next, m += P = L.r, x += I = L.g, w += B = L.b, b += _ = L.a, C -= P, v -= I, D -= B, k -= _, L = L.next, d += 4;
-    }c += n;
-  }for (i = 0; i < n; i++) {
-    for (v = D = k = C = y = f = p = u = 0, m = j * (P = S[d = i << 2]), x = j * (I = S[d + 1]), w = j * (B = S[d + 2]), b = j * (_ = S[d + 3]), u += G * P, y += G * I, f += G * B, p += G * _, J = $, l = 0; l < j; l++) {
-      J.r = P, J.g = I, J.b = B, J.a = _, J = J.next;
-    }for (g = n, l = 1; l <= r; l++) {
-      d = g + i << 2, u += (J.r = P = S[d]) * (E = j - l), y += (J.g = I = S[d + 1]) * E, f += (J.b = B = S[d + 2]) * E, p += (J.a = _ = S[d + 3]) * E, C += P, v += I, D += B, k += _, J = J.next, l < T && (g += n);
-    }for (d = i, U = $, L = A, s = 0; s < o; s++) {
-      S[(h = d << 2) + 3] = _ = p * O >> V, _ > 0 ? (_ = 255 / _, S[h] = (u * O >> V) * _, S[h + 1] = (y * O >> V) * _, S[h + 2] = (f * O >> V) * _) : S[h] = S[h + 1] = S[h + 2] = 0, u -= m, y -= x, f -= w, p -= b, m -= U.r, x -= U.g, w -= U.b, b -= U.a, h = i + ((h = s + j) < T ? h : T) * n << 2, u += C += U.r = S[h], y += v += U.g = S[h + 1], f += D += U.b = S[h + 2], p += k += U.a = S[h + 3], U = U.next, m += P = L.r, x += I = L.g, w += B = L.b, b += _ = L.a, C -= P, v -= I, D -= B, k -= _, L = L.next, d += n;
-    }
-  }return t;
-},
-    greyscale = function greyscale(t) {
-  var e = t.data.length;var a = void 0;for (var n = 0; n < e; n += 4) {
-    a = .34 * t.data[n] + .5 * t.data[n + 1] + .16 * t.data[n + 2], t.data[n] = a, t.data[n + 1] = a, t.data[n + 2] = a;
-  }return t;
-},
-    getEdgePoints = function getEdgePoints(t, e) {
-  var a = t.width,
-      n = t.height,
-      o = t.data,
-      r = [];var i, s, l, h, g, d, c, u, y;for (s = 0; s < n; s += 2) {
-    for (i = 0; i < a; i += 2) {
-      for (u = y = 0, l = -1; l <= 1; l++) {
-        if (d = s + l, c = d * a, d >= 0 && d < n) for (h = -1; h <= 1; h++) {
-          (g = i + h) >= 0 && g < a && (u += o[g + c << 2], y++);
-        }
-      }y && (u /= y), u > e && r.push({ x: i, y: s });
-    }
-  }return r;
-},
-    getVerticesFromPoints = function getVerticesFromPoints(t, e, a, n, o) {
-  var r = {},
-      i = Math.max(~~(e * (1 - a)), 5),
-      s = Math.round(Math.sqrt(i)),
-      l = ~~(n / s),
-      h = ~~(o / Math.round(Math.ceil(i / s)));var g = 0,
-      d = 0,
-      c = 0,
-      u = 0;for (u = 0; u < o; u += h) {
-    for (c = d = ++g % 2 == 0 ? ~~(l / 2) : 0; c < n; c += l) {
-      c < n && u < o && addVertex(~~(c + Math.cos(u) * h), ~~(u + Math.sin(c) * l), r);
-    }
-  }addVertex(0, 0, r), addVertex(n - 1, 0, r), addVertex(n - 1, o - 1, r), addVertex(0, o - 1, r);var y = e - Object.keys(r).length,
-      f = t.length,
-      p = ~~(f / y);if (e > 0 && p > 0) {
-    var _e = 0;for (_e = 0; _e < f; _e += p) {
-      addVertex(t[_e].x, t[_e].y, r);
-    }
-  }return t = null, Object.keys(r).map(function (t) {
-    return r[t];
-  });
-},
-    getBoundingBox = function getBoundingBox(t) {
-  var e = 1 / 0,
-      a = -1 / 0,
-      n = 1 / 0,
-      o = -1 / 0;return t.forEach(function (t) {
-    t.x < e && (e = t.x), t.y < n && (n = t.y), t.x > a && (a = t.x), t.y > o && (o = t.y);
-  }), { x: e, y: n, width: a - e, height: o - n };
-},
-    addBoundingBoxesToPolygons = function addBoundingBoxesToPolygons(t, e, a) {
-  return t.forEach(function (t) {
-    t.boundingBox = getBoundingBox([t.a, t.b, t.c]);
-  }), t.filter(function (t) {
-    return t.boundingBox.width > 0 && t.boundingBox.height > 0;
-  });
-},
-    getColorByPos = function getColorByPos(t, e, a) {
-  var n = (0 | clamp(t.x, 1, e.width - 2)) + (0 | clamp(t.y, 1, e.height - 2)) * e.width << 2;n >= e.data.length && (n = e.data.length - 5);var o = e.data[n + 3] / 255;return a && 0 === o ? a : { r: e.data[n], g: e.data[n + 1], b: e.data[n + 2], a: o };
-},
-    polygonCenter = function polygonCenter(t) {
-  return { x: .33333 * (t.a.x + t.b.x + t.c.x), y: .33333 * (t.a.y + t.b.y + t.c.y) };
-},
-    isTransparent = function isTransparent(t) {
-  return 0 === t.a;
-},
-    addColorToPolygons = function addColorToPolygons(t, e, a) {
-  var n = a.fill,
-      o = a.stroke,
-      r = a.strokeWidth,
-      i = a.lineJoin,
-      s = a.transparentColor,
-      l = "string" == typeof n && n,
-      h = "string" == typeof o && o,
-      g = function g(t, e) {
-    var a = isTransparent(t) && s;return e && !a ? e : toRGBA(a ? s : t);
-  };
-
-  return t.forEach(function (t) {
-    var a = getColorByPos(polygonCenter(t), e);n && (t.fill = g(a, l)), o && (t.strokeColor = g(a, h), t.strokeWidth = r, t.lineJoin = i);
-  }), t;
-},
-    luminance = function luminance(t) {
-  var e = [t.r, t.g, t.b].map(function (t) {
-    return (t /= 255) <= .03928 ? t / 12.92 : Math.pow((t + .055) / 1.055, 2.4);
-  });return .2126 * e[0] + .7152 * e[1] + .0722 * e[2];
-},
-    distance = function distance(t, e) {
-  var a = e.x - t.x,
-      n = e.y - t.y;return Math.sqrt(a * a + n * n);
-},
-    addGradientsToPolygons = function addGradientsToPolygons(t, e, a) {
-  return t.forEach(function (t) {
-    var n = {};"abc".split("").forEach(function (o) {
-      var r = getColorByPos(t[o], e, a.transparentColor);n[o] = { key: o, color: r, x: t[o].x, y: t[o].y }, n[o].luminance = luminance(n[o].color);var i = "abc".replace(o, "").split("");n[o].median = { x: (t[i[0]].x + t[i[1]].x) / 2, y: (t[i[0]].y + t[i[1]].y) / 2 }, n[o].medianColor = getColorByPos(n[o].median, e, a.transparentColor), n[o].medianLuminance = luminance(n[o].medianColor);
-    });var o = [n.a, n.b, n.c].sort(function (t, e) {
-      return Math.abs(t.luminance - t.medianLuminance) - Math.abs(e.luminance - e.medianLuminance);
-    }),
-        r = o[0],
-        i = o[0],
-        s = r.median,
-        l = [i],
-        h = distance(i, s);for (var _t = 1, _e2 = a.gradientStops - 2; _t < _e2; _t++) {
-      var _e3 = _t * (h / a.gradientStops) / h,
-          _n = { x: i.x + _e3 * (s.x - i.x), y: i.y + _e3 * (s.y - i.y) };l.push(_n);
-    }l.push(s), t.gradient = { x1: r.x, y1: r.y, x2: r.median.x, y2: r.median.y, colors: l.map(function (t) {
-        return getColorByPos(t, e, a.transparentColor);
-      }) }, a.stroke && (t.strokeWidth = a.strokeWidth, t.lineJoin = a.lineJoin), n = null;
-  }), t;
-},
-    filterTransparentPolygons = function filterTransparentPolygons(t, e) {
-  return t.filter(function (t) {
-    var a = getColorByPos(polygonCenter(t), e);return !isTransparent(a);
-  });
-},
-    imageDataToPolygons = function imageDataToPolygons(t, e) {
-  if (isImageData(t)) {
-    var a = { width: t.width, height: t.height },
-        n = copyImageData(t),
-        o = copyImageData(t),
-        r = stackblur(n, 0, 0, a.width, a.height, e.blur),
-        i = greyscale(r),
-        s = sobel(i).toImageData(),
-        l = getEdgePoints(s, e.threshold),
-        h = getVerticesFromPoints(l, e.vertexCount, e.accuracy, a.width, a.height);var g = delaunay_2(h);return g = addBoundingBoxesToPolygons(g), e.transparentColor || (g = filterTransparentPolygons(g, o)), g = !0 === e.fill && !0 === e.gradients ? addGradientsToPolygons(g, o, e) : addColorToPolygons(g, o, e);
-  }throw new Error("Can't work with the imageData provided. It seems to be corrupt.");
-},
-    browser = function browser(t) {
-  function e() {
-    var t = objectAssign({}, c);return g || objectAssign(t, u), t;
-  }function a() {
-    var t = objectAssign({}, c);return d || objectAssign(t, y), t;
-  }function n(t, e, n) {
-    return s = !!n, g = function g() {
-      return s ? t(e) : new Promise(function (a, n) {
-        try {
-          a(t(e));
-        } catch (t) {
-          n(t);
-        }
-      });
-    }, r() ? i() : a();
-  }function o(t, a, n) {
-    return l = !!n, d = function d(e, n) {
-      return l ? t(e, n, a) : new Promise(function (o, r) {
-        try {
-          o(t(e, n, a));
-        } catch (t) {
-          r(t);
-        }
-      });
-    }, r() ? i() : e();
-  }function r() {
-    return g && d;
-  }function i() {
-    if (s && l) {
-      var _e4 = g(t),
-          _a2 = imageDataToPolygons(_e4, t);return d(_a2, _e4);
-    }return new Promise(function (e, a) {
-      var n = void 0;(function (t) {
-        return new Promise(function (e, a) {
-          if (s) try {
-            var _n2 = g(t);e(_n2);
-          } catch (t) {
-            a(t);
-          } else g(t).then(e, a);
-        });
-      })().then(function (e) {
-        return n = e, function (t, e) {
-          return new Promise(function (a, n) {
-            h.addEventListener("message", function (t) {
-              if (t.data && t.data.polygonJSONStr) {
-                var _e5 = JSON.parse(t.data.polygonJSONStr);a(_e5);
-              } else n(t.data && t.data.err ? t.data.err : t);
-            }), h.postMessage({ params: e, imageData: t, imageDataWidth: t.width, imageDataHeight: t.height });
-          });
-        }(n, t);
-      }, a).then(function (t) {
-        return function (t, e) {
-          return new Promise(function (a, n) {
-            if (l) try {
-              var _o2 = d(t, e);a(_o2);
-            } catch (t) {
-              n(t);
-            } else d(t, e).then(a, n);
-          });
-        }(t, n);
-      }, a).then(function (t) {
-        e(t);
-      }, a);
-    });
-  }t = sanitizeInput(t);var s = !1,
-      l = !1;var h = new Worker(URL.createObjectURL(new Blob(['function createCommonjsModule(t,e){return e={exports:{}},t(e,e.exports),e.exports}function copyImageDataWithCanvas(t){const e=new Canvas$1(t.width,t.height).getContext("2d");return e.putImageData(t,0,0),e.getImageData(0,0,t.width,t.height)}function BlurStack(){this.r=0,this.g=0,this.b=0,this.a=0,this.next=null}function addVertex(t,e,a){let n=t+"|"+e;a[n]||(a[n]={x:t,y:e}),n=null}var commonjsGlobal="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{},delaunay=createCommonjsModule(function(t){function e(t,e,a){this.a=t,this.b=e,this.c=a;var n,o,r,i,s=e.x-t.x,h=e.y-t.y,l=a.x-t.x,d=a.y-t.y,g=s*(t.x+e.x)+h*(t.y+e.y),c=l*(t.x+a.x)+d*(t.y+a.y),u=2*(s*(a.y-e.y)-h*(a.x-e.x));Math.abs(u)<1e-6?(n=Math.min(t.x,e.x,a.x),o=Math.min(t.y,e.y,a.y),r=.5*(Math.max(t.x,e.x,a.x)-n),i=.5*(Math.max(t.y,e.y,a.y)-o),this.x=n+r,this.y=o+i,this.r=r*r+i*i):(this.x=(d*g-h*c)/u,this.y=(s*c-l*g)/u,r=this.x-t.x,i=this.y-t.y,this.r=r*r+i*i)}function a(t,e){return e.x-t.x}function n(t){var e,a,n,o,r,i=t.length;t:for(;i;)for(a=t[--i],e=t[--i],n=i;n;)if(r=t[--n],o=t[--n],e===o&&a===r||e===r&&a===o){t.splice(i,2),t.splice(n,2),i-=2;continue t}}function o(t){if(t.length<3)return[];t.sort(a);for(var o=t.length-1,r=t[o].x,i=t[0].x,s=t[o].y,h=s;o--;)t[o].y<s&&(s=t[o].y),t[o].y>h&&(h=t[o].y);var l,d,g,c=i-r,u=h-s,y=c>u?c:u,f=.5*(i+r),p=.5*(h+s),m=[new e({x:f-20*y,y:p-y,__sentinel:!0},{x:f,y:p+20*y,__sentinel:!0},{x:f+20*y,y:p-y,__sentinel:!0})],x=[],w=[];for(o=t.length;o--;){for(w.length=0,l=m.length;l--;)(c=t[o].x-m[l].x)>0&&c*c>m[l].r?(x.push(m[l]),m.splice(l,1)):c*c+(u=t[o].y-m[l].y)*u>m[l].r||(w.push(m[l].a,m[l].b,m[l].b,m[l].c,m[l].c,m[l].a),m.splice(l,1));for(n(w),l=w.length;l;)g=w[--l],d=w[--l],m.push(new e(d,g,t[o]))}for(Array.prototype.push.apply(x,m),o=x.length;o--;)(x[o].a.__sentinel||x[o].b.__sentinel||x[o].c.__sentinel)&&x.splice(o,1);return x}e.prototype.draw=function(t){t.beginPath(),t.moveTo(this.a.x,this.a.y),t.lineTo(this.b.x,this.b.y),t.lineTo(this.c.x,this.c.y),t.closePath(),t.stroke()},t.exports={Triangle:e,triangulate:o}}),delaunay_2=delaunay.triangulate,sobel=createCommonjsModule(function(t,e){!function(a){"use strict";function n(t){function e(t){return function(e,a,n){return n=n||0,t[4*(r*a+e)+n]}}if(!(this instanceof n))return new n(t);var a,o,r=t.width,i=t.height,s=[[-1,0,1],[-2,0,2],[-1,0,1]],h=[[-1,-2,-1],[0,0,0],[1,2,1]],l=[],d=[],g=e(t.data);for(o=0;o<i;o++)for(a=0;a<r;a++){var c=(g(a,o,0)+g(a,o,1)+g(a,o,2))/3;d.push(c,c,c,255)}for(g=e(d),o=0;o<i;o++)for(a=0;a<r;a++){var u=s[0][0]*g(a-1,o-1)+s[0][1]*g(a,o-1)+s[0][2]*g(a+1,o-1)+s[1][0]*g(a-1,o)+s[1][1]*g(a,o)+s[1][2]*g(a+1,o)+s[2][0]*g(a-1,o+1)+s[2][1]*g(a,o+1)+s[2][2]*g(a+1,o+1),y=h[0][0]*g(a-1,o-1)+h[0][1]*g(a,o-1)+h[0][2]*g(a+1,o-1)+h[1][0]*g(a-1,o)+h[1][1]*g(a,o)+h[1][2]*g(a+1,o)+h[2][0]*g(a-1,o+1)+h[2][1]*g(a,o+1)+h[2][2]*g(a+1,o+1),f=Math.sqrt(u*u+y*y)>>>0;l.push(f,f,f,255)}var p=l;return"function"==typeof Uint8ClampedArray&&(p=new Uint8ClampedArray(l)),p.toImageData=function(){return n.toImageData(p,r,i)},p}function o(t,e,a){return{width:e,height:a,data:t}}n.toImageData=function(t,e,a){if("function"==typeof ImageData&&"[object Uint16Array]"===Object.prototype.toString.call(t))return new ImageData(t,e,a);if("object"==typeof window&&"object"==typeof window.document){var n=document.createElement("canvas");if("function"==typeof n.getContext){var r=n.getContext("2d").createImageData(e,a);return r.data.set(t),r}return new o(t,e,a)}return new o(t,e,a)},t.exports&&(e=t.exports=n),e.Sobel=n}()}),isImageData=t=>t&&"number"==typeof t.width&&"number"==typeof t.height&&t.data&&"number"==typeof t.data.length&&"object"==typeof t.data;class Canvas$1{constructor(t=300,e=150){"undefined"==typeof window?(this.canvasEl={width:t,height:e},this.ctx=null):(this.canvasEl=document.createElement("canvas"),this.canvasEl.width=t,this.canvasEl.height=e,this.ctx=this.canvasEl.getContext("2d"))}getContext(){return this.ctx}toDataURL(t,e,a){if("function"!=typeof a)return this.canvasEl.toDataURL(t,e);a(this.canvasEl.toDataURL(t,e))}get width(){return this.canvasEl.width}set width(t){this.canvasEl.width=t}get height(){return this.canvasEl.height}set height(t){this.canvasEl.height=t}}"undefined"!=typeof window&&(Canvas$1.Image=Image);var copyImageData=t=>{if(isImageData(t)){if("undefined"==typeof Uint8ClampedArray){if("undefined"==typeof window)throw new Error("Can\'t copy imageData in webworker without Uint8ClampedArray support.");return copyImageDataWithCanvas(t)}{const e=new Uint8ClampedArray(t.data);if("undefined"==typeof ImageData)return{width:t.width,height:t.height,data:e};{let a;try{a=new ImageData(e,t.width,t.height)}catch(e){if("undefined"==typeof window)throw new Error("Can\'t copy imageData in webworker without proper ImageData() support.");a=copyImageDataWithCanvas(t)}return a}}}throw new Error("Given imageData object is not useable.")};const mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,289,287,285,282,280,278,275,273,271,269,267,265,263,261,259],shg_table=[9,11,12,13,13,14,14,15,15,15,15,16,16,16,16,17,17,17,17,17,17,17,18,18,18,18,18,18,18,18,18,19,19,19,19,19,19,19,19,19,19,19,19,19,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24];var stackblur=(t,e,a,n,o,r)=>{var i,s,h,l,d,g,c,u,y,f,p,m,x,w,b,v,C,D,I,E,M,P,B,k,_=t.data,T=r+r+1,j=n-1,A=o-1,S=r+1,U=S*(S+1)/2,V=new BlurStack,W=V;for(h=1;h<T;h++)if(W=W.next=new BlurStack,h==S)var $=W;W.next=V;var G=null,J=null;c=g=0;var L=mul_table[r],O=shg_table[r];for(s=0;s<o;s++){for(v=C=D=I=u=y=f=p=0,m=S*(E=_[g]),x=S*(M=_[g+1]),w=S*(P=_[g+2]),b=S*(B=_[g+3]),u+=U*E,y+=U*M,f+=U*P,p+=U*B,W=V,h=0;h<S;h++)W.r=E,W.g=M,W.b=P,W.a=B,W=W.next;for(h=1;h<S;h++)l=g+((j<h?j:h)<<2),u+=(W.r=E=_[l])*(k=S-h),y+=(W.g=M=_[l+1])*k,f+=(W.b=P=_[l+2])*k,p+=(W.a=B=_[l+3])*k,v+=E,C+=M,D+=P,I+=B,W=W.next;for(G=V,J=$,i=0;i<n;i++)_[g+3]=B=p*L>>O,0!=B?(B=255/B,_[g]=(u*L>>O)*B,_[g+1]=(y*L>>O)*B,_[g+2]=(f*L>>O)*B):_[g]=_[g+1]=_[g+2]=0,u-=m,y-=x,f-=w,p-=b,m-=G.r,x-=G.g,w-=G.b,b-=G.a,l=c+((l=i+r+1)<j?l:j)<<2,u+=v+=G.r=_[l],y+=C+=G.g=_[l+1],f+=D+=G.b=_[l+2],p+=I+=G.a=_[l+3],G=G.next,m+=E=J.r,x+=M=J.g,w+=P=J.b,b+=B=J.a,v-=E,C-=M,D-=P,I-=B,J=J.next,g+=4;c+=n}for(i=0;i<n;i++){for(C=D=I=v=y=f=p=u=0,m=S*(E=_[g=i<<2]),x=S*(M=_[g+1]),w=S*(P=_[g+2]),b=S*(B=_[g+3]),u+=U*E,y+=U*M,f+=U*P,p+=U*B,W=V,h=0;h<S;h++)W.r=E,W.g=M,W.b=P,W.a=B,W=W.next;for(d=n,h=1;h<=r;h++)g=d+i<<2,u+=(W.r=E=_[g])*(k=S-h),y+=(W.g=M=_[g+1])*k,f+=(W.b=P=_[g+2])*k,p+=(W.a=B=_[g+3])*k,v+=E,C+=M,D+=P,I+=B,W=W.next,h<A&&(d+=n);for(g=i,G=V,J=$,s=0;s<o;s++)_[(l=g<<2)+3]=B=p*L>>O,B>0?(B=255/B,_[l]=(u*L>>O)*B,_[l+1]=(y*L>>O)*B,_[l+2]=(f*L>>O)*B):_[l]=_[l+1]=_[l+2]=0,u-=m,y-=x,f-=w,p-=b,m-=G.r,x-=G.g,w-=G.b,b-=G.a,l=i+((l=s+S)<A?l:A)*n<<2,u+=v+=G.r=_[l],y+=C+=G.g=_[l+1],f+=D+=G.b=_[l+2],p+=I+=G.a=_[l+3],G=G.next,m+=E=J.r,x+=M=J.g,w+=P=J.b,b+=B=J.a,v-=E,C-=M,D-=P,I-=B,J=J.next,g+=n}return t},greyscale=t=>{const e=t.data.length;let a;for(let n=0;n<e;n+=4)a=.34*t.data[n]+.5*t.data[n+1]+.16*t.data[n+2],t.data[n]=a,t.data[n+1]=a,t.data[n+2]=a;return t},getEdgePoints=(t,e)=>{const a=t.width,n=t.height,o=t.data,r=[];var i,s,h,l,d,g,c,u,y;for(s=0;s<n;s+=2)for(i=0;i<a;i+=2){for(u=y=0,h=-1;h<=1;h++)if(g=s+h,c=g*a,g>=0&&g<n)for(l=-1;l<=1;l++)(d=i+l)>=0&&d<a&&(u+=o[d+c<<2],y++);y&&(u/=y),u>e&&r.push({x:i,y:s})}return r},clamp=(t,e,a)=>t<e?e:t>a?a:t,getVerticesFromPoints=(t,e,a,n,o)=>{const r={},i=Math.max(~~(e*(1-a)),5),s=Math.round(Math.sqrt(i)),h=~~(n/s),l=~~(o/Math.round(Math.ceil(i/s)));let d=0,g=0,c=0,u=0;for(u=0;u<o;u+=l)for(c=g=++d%2==0?~~(h/2):0;c<n;c+=h)c<n&&u<o&&addVertex(~~(c+Math.cos(u)*l),~~(u+Math.sin(c)*h),r);addVertex(0,0,r),addVertex(n-1,0,r),addVertex(n-1,o-1,r),addVertex(0,o-1,r);const y=e-Object.keys(r).length,f=t.length,p=~~(f/y);if(e>0&&p>0){let e=0;for(e=0;e<f;e+=p)addVertex(t[e].x,t[e].y,r)}return t=null,Object.keys(r).map(t=>r[t])},getBoundingBox=t=>{let e=1/0,a=-1/0,n=1/0,o=-1/0;return t.forEach(t=>{t.x<e&&(e=t.x),t.y<n&&(n=t.y),t.x>a&&(a=t.x),t.y>o&&(o=t.y)}),{x:e,y:n,width:a-e,height:o-n}},addBoundingBoxesToPolygons=(t,e,a)=>(t.forEach(t=>{t.boundingBox=getBoundingBox([t.a,t.b,t.c])}),t.filter(t=>t.boundingBox.width>0&&t.boundingBox.height>0)),getColorByPos=(t,e,a)=>{let n=(0|clamp(t.x,1,e.width-2))+(0|clamp(t.y,1,e.height-2))*e.width<<2;n>=e.data.length&&(n=e.data.length-5);const o=e.data[n+3]/255;return a&&0===o?a:{r:e.data[n],g:e.data[n+1],b:e.data[n+2],a:o}},polygonCenter=t=>({x:.33333*(t.a.x+t.b.x+t.c.x),y:.33333*(t.a.y+t.b.y+t.c.y)}),isTransparent=t=>0===t.a;const objectAssign=Object.assign;var toRGBA=t=>{const e=objectAssign({a:1},t);return`rgba(${e.r}, ${e.g}, ${e.b}, ${e.a})`},addColorToPolygons=function(t,e,a){const{fill:n,stroke:o,strokeWidth:r,lineJoin:i,transparentColor:s}=a,h="string"==typeof n&&n,l="string"==typeof o&&o,d=(t,e)=>{const a=isTransparent(t)&&s;return e&&!a?e:toRGBA(a?s:t)};return t.forEach(t=>{const a=getColorByPos(polygonCenter(t),e);n&&(t.fill=d(a,h)),o&&(t.strokeColor=d(a,l),t.strokeWidth=r,t.lineJoin=i)}),t},luminance=t=>{const e=[t.r,t.g,t.b].map(t=>(t/=255)<=.03928?t/12.92:Math.pow((t+.055)/1.055,2.4));return.2126*e[0]+.7152*e[1]+.0722*e[2]},distance=(t,e)=>{let a=e.x-t.x,n=e.y-t.y;return Math.sqrt(a*a+n*n)},addGradientsToPolygons=function(t,e,a){return t.forEach(t=>{let n={};"abc".split("").forEach(o=>{const r=getColorByPos(t[o],e,a.transparentColor);n[o]={key:o,color:r,x:t[o].x,y:t[o].y},n[o].luminance=luminance(n[o].color);const i="abc".replace(o,"").split("");n[o].median={x:(t[i[0]].x+t[i[1]].x)/2,y:(t[i[0]].y+t[i[1]].y)/2},n[o].medianColor=getColorByPos(n[o].median,e,a.transparentColor),n[o].medianLuminance=luminance(n[o].medianColor)});const o=[n.a,n.b,n.c].sort((t,e)=>Math.abs(t.luminance-t.medianLuminance)-Math.abs(e.luminance-e.medianLuminance)),r=o[0],i=o[0],s=r.median,h=[i],l=distance(i,s);for(let t=1,e=a.gradientStops-2;t<e;t++){const e=t*(l/a.gradientStops)/l,n={x:i.x+e*(s.x-i.x),y:i.y+e*(s.y-i.y)};h.push(n)}h.push(s),t.gradient={x1:r.x,y1:r.y,x2:r.median.x,y2:r.median.y,colors:h.map(t=>getColorByPos(t,e,a.transparentColor))},a.stroke&&(t.strokeWidth=a.strokeWidth,t.lineJoin=a.lineJoin),n=null}),t},filterTransparentPolygons=(t,e)=>t.filter(t=>{const a=getColorByPos(polygonCenter(t),e);return!isTransparent(a)}),imageDataToPolygons=(t,e)=>{if(isImageData(t)){const a={width:t.width,height:t.height},n=copyImageData(t),o=copyImageData(t),r=stackblur(n,0,0,a.width,a.height,e.blur),i=greyscale(r),s=sobel(i).toImageData(),h=getEdgePoints(s,e.threshold),l=getVerticesFromPoints(h,e.vertexCount,e.accuracy,a.width,a.height);let d=delaunay_2(l);return d=addBoundingBoxesToPolygons(d),e.transparentColor||(d=filterTransparentPolygons(d,o)),d=!0===e.fill&&!0===e.gradients?addGradientsToPolygons(d,o,e):addColorToPolygons(d,o,e)}throw new Error("Can\'t work with the imageData provided. It seems to be corrupt.")};onmessage=(t=>{if(t.data.imageData&&t.data.params)try{let e=t.data.imageData;void 0===e.width&&"number"==typeof t.data.imageDataWidth&&(e.width=t.data.imageDataWidth),void 0===e.height&&"number"==typeof t.data.imageDataHeight&&(e.height=t.data.imageDataHeight);const a=imageDataToPolygons(t.data.imageData,t.data.params);self.postMessage({polygonJSONStr:JSON.stringify(a)})}catch(t){self.postMessage({err:t.message||t})}else t.data.imageData?self.postMessage({err:"Parameters are missing."}):self.postMessage({err:"ImageData is missing."});self.close()});'], { type: "text/javascript" })));var g = void 0,
-      d = void 0;var c = { getParams: function getParams() {
-      return t;
-    }, getInput: e, getOutput: a },
-      u = { fromImage: function fromImage(t) {
-      return n(fromImageToImageData, t);
-    }, fromImageSync: function fromImageSync(t) {
-      return n(fromImageToImageData, t, !0);
-    }, fromImageData: function fromImageData(t) {
-      return n(function (t) {
-        return t;
-      }, t);
-    }, fromImageDataSync: function fromImageDataSync(t) {
-      return n(function (t) {
-        return t;
-      }, t, !0);
-    } },
-      y = { toData: function toData(t) {
-      return o(function (t) {
-        return t;
-      }, t);
-    }, toDataSync: function toDataSync(t) {
-      return o(function (t) {
-        return t;
-      }, t, !0);
-    }, toDataURL: function toDataURL(t) {
-      return o(polygonsToDataURL, t);
-    }, toDataURLSync: function toDataURLSync(t) {
-      return o(polygonsToDataURL, t, !0);
-    }, toImageData: function toImageData(t) {
-      return o(polygonsToImageData, t);
-    }, toImageDataSync: function toImageDataSync(t) {
-      return o(polygonsToImageData, t, !0);
-    }, toSVG: function toSVG(t) {
-      return o(polygonsToSVG, t);
-    }, toSVGSync: function toSVGSync(t) {
-      return o(polygonsToSVG, t, !0);
-    } };return e();
-};exports.default = browser;
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
-
-/***/ }),
-/* 7 */
-/***/ (function(module, exports) {
-
-var g;
-
-// This works in non-strict mode
-g = (function() {
-	return this;
-})();
-
-try {
-	// This works if eval is allowed (see CSP)
-	g = g || Function("return this")() || (1,eval)("this");
-} catch(e) {
-	// This works if the window reference is available
-	if(typeof window === "object")
-		g = window;
-}
-
-// g can still be undefined, but nothing to do about it...
-// We return undefined, instead of nothing here, so it's
-// easier to handle this case. if(!global) { ...}
-
-module.exports = g;
-
-
-/***/ }),
-/* 8 */
 /***/ (function(module, exports) {
 
 exports = module.exports = Victor;
@@ -2542,6 +1961,561 @@ function degrees2radian (deg) {
 
 
 /***/ }),
+/* 7 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+/* WEBPACK VAR INJECTION */(function(global) {
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function createCommonjsModule(t, e) {
+  return e = { exports: {} }, t(e, e.exports), e.exports;
+}function copyImageDataWithCanvas(t) {
+  var e = new Canvas$1(t.width, t.height).getContext("2d");return e.putImageData(t, 0, 0), e.getImageData(0, 0, t.width, t.height);
+}function BlurStack() {
+  this.r = 0, this.g = 0, this.b = 0, this.a = 0, this.next = null;
+}function addVertex(t, e, a) {
+  var n = t + "|" + e;a[n] || (a[n] = { x: t, y: e }), n = null;
+}var clamp = function clamp(t, e, a) {
+  return t < e ? e : t > a ? a : t;
+},
+    clone = function clone(t) {
+  var e = !1;if (void 0 !== t) try {
+    e = JSON.parse(JSON.stringify(t));
+  } catch (t) {}return e;
+};
+var Canvas$1 = function () {
+  function Canvas$1() {
+    var t = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 300;
+    var e = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 150;
+
+    _classCallCheck(this, Canvas$1);
+
+    "undefined" == typeof window ? (this.canvasEl = { width: t, height: e }, this.ctx = null) : (this.canvasEl = document.createElement("canvas"), this.canvasEl.width = t, this.canvasEl.height = e, this.ctx = this.canvasEl.getContext("2d"));
+  }
+
+  _createClass(Canvas$1, [{
+    key: "getContext",
+    value: function getContext() {
+      return this.ctx;
+    }
+  }, {
+    key: "toDataURL",
+    value: function toDataURL(t, e, a) {
+      if ("function" != typeof a) return this.canvasEl.toDataURL(t, e);a(this.canvasEl.toDataURL(t, e));
+    }
+  }, {
+    key: "width",
+    get: function get() {
+      return this.canvasEl.width;
+    },
+    set: function set(t) {
+      this.canvasEl.width = t;
+    }
+  }, {
+    key: "height",
+    get: function get() {
+      return this.canvasEl.height;
+    },
+    set: function set(t) {
+      this.canvasEl.height = t;
+    }
+  }]);
+
+  return Canvas$1;
+}();
+
+"undefined" != typeof window && (Canvas$1.Image = Image);var makeCanvasAndContext = function makeCanvasAndContext(t, e, a, n) {
+  var o = !(!e || !e.backgroundColor) && e.backgroundColor,
+      r = new Canvas$1(t.width * a, t.height * a, n),
+      i = r.getContext("2d");return o && (i.fillStyle = o, i.fillRect(0, 0, t.width * a, t.height * a), i.fillStyle = "transparent"), { canvas: r, ctx: i };
+},
+    toColor = function toColor(t) {
+  var e = makeCanvasAndContext({ width: 1, height: 1 }, {}, 1, !0).ctx;e.fillStyle = t, e.fillRect(0, 0, 1, 1);var a = e.getImageData(0, 0, 1, 1).data;return { r: a[0], g: a[1], b: a[2], a: a[3] / 255 };
+},
+    defaultParams = { accuracy: .7, blur: 4, fill: !0, stroke: !0, strokeWidth: .5, lineJoin: "miter", vertexCount: 700, threshold: 50, transparentColor: !1 };var allowedLineJoins = ["miter", "round", "bevel"];var sanitizeInput = function sanitizeInput(t) {
+  return "object" != _typeof(t = clone(t)) && (t = {}), "number" != typeof t.accuracy || isNaN(t.accuracy) ? t.accuracy = defaultParams.accuracy : t.accuracy = clamp(t.accuracy, 0, 1), ("number" != typeof t.blur || isNaN(t.blur)) && (t.blur = defaultParams.blur), t.blur <= 0 && (t.blur = 1), "string" != typeof t.fill && "boolean" != typeof t.fill && (t.fill = defaultParams.fill), "string" != typeof t.stroke && "boolean" != typeof t.stroke && (t.stroke = defaultParams.stroke), ("number" != typeof t.strokeWidth || isNaN(t.strokeWidth)) && (t.strokeWidth = defaultParams.strokeWidth), "number" != typeof t.threshold || isNaN(t.threshold) ? t.threshold = defaultParams.threshold : t.threshold = clamp(t.threshold, 1, 100), "string" == typeof t.lineJoin && -1 !== allowedLineJoins.indexOf(t.lineJoin) || (t.lineJoin = defaultParams.lineJoin), t.gradients && t.fill ? t.gradients = !0 : t.gradients = !1, t.gradients && (("number" != typeof t.gradientStops || isNaN(t.gradientStops) || t.gradientStops < 2) && (t.gradientStops = 2), t.gradientStops = Math.round(t.gradientStops)), ("number" != typeof t.vertexCount || isNaN(t.vertexCount)) && (t.vertexCount = defaultParams.vertexCount), t.vertexCount <= 0 && (t.vertexCount = 1), "string" != typeof t.transparentColor && "boolean" != typeof t.transparentColor && (t.transparentColor = defaultParams.transparentColor), !0 === _typeof(t.transparentColor) && (t.transparentColor = !1), "string" == typeof t.transparentColor && (t.transparentColor = toColor(t.transparentColor)), t;
+},
+    fromImageToImageData = function fromImageToImageData(t) {
+  if (t instanceof HTMLImageElement) {
+    if (!t.naturalWidth || !t.naturalHeight || !1 === t.complete) throw new Error("This this image hasn't finished loading: " + t.src);var e = new Canvas$1(t.naturalWidth, t.naturalHeight),
+        a = e.getContext("2d");a.drawImage(t, 0, 0, e.width, e.height);var n = a.getImageData(0, 0, e.width, e.height);return n.data && n.data.length && (void 0 === n.width && (n.width = t.naturalWidth), void 0 === n.height && (n.height = t.naturalHeight)), n;
+  }throw new Error("This object does not seem to be an image.");
+};var objectAssign = Object.assign;var toRGBA = function toRGBA(t) {
+  var e = objectAssign({ a: 1 }, t);return "rgba(" + e.r + ", " + e.g + ", " + e.b + ", " + e.a + ")";
+},
+    drawPolygonsOnContext = function drawPolygonsOnContext(t, e, a, n) {
+  return n = n || 1, e.forEach(function (e, a) {
+    if (t.beginPath(), t.moveTo(e.a.x * n, e.a.y * n), t.lineTo(e.b.x * n, e.b.y * n), t.lineTo(e.c.x * n, e.c.y * n), t.lineTo(e.a.x * n, e.a.y * n), e.gradient) {
+      var _a = t.createLinearGradient(e.gradient.x1 * n, e.gradient.y1 * n, e.gradient.x2 * n, e.gradient.y2 * n),
+          o = e.gradient.colors.length - 1;e.gradient.colors.forEach(function (t, e) {
+        var n = toRGBA(t);_a.addColorStop(e / o, n);
+      }), t.fillStyle = _a, t.fill(), e.strokeWidth > 0 && (t.strokeStyle = _a, t.lineWidth = e.strokeWidth * n, t.lineJoin = e.lineJoin, t.stroke());
+    } else e.fill && (t.fillStyle = e.fill, t.fill()), e.strokeColor && (t.strokeStyle = e.strokeColor, t.lineWidth = e.strokeWidth * n, t.lineJoin = e.lineJoin, t.stroke());t.closePath();
+  }), t;
+},
+    polygonsToImageData = function polygonsToImageData(t, e, a) {
+  var n = a && a.dpr ? a.dpr : 1,
+      o = makeCanvasAndContext(e, a, n, !0).ctx;return drawPolygonsOnContext(o, t, e, n), o.getImageData(0, 0, e.width * n, e.height * n);
+},
+    polygonsToDataURL = function polygonsToDataURL(t, e, a) {
+  var n = a && a.dpr ? a.dpr : 1,
+      o = makeCanvasAndContext(e, a, n);return drawPolygonsOnContext(o.ctx, t, e, n), o.canvas.toDataURL();
+},
+    polygonsToSVG = function polygonsToSVG(t, e) {
+  var a = "";t.length && t[0].gradient && (a = "<defs>");var n = "";t.forEach(function (t, e) {
+    var o = t.a,
+        r = t.b,
+        i = t.c;
+    if (n += "<polygon points=\"" + o.x + "," + o.y + " " + r.x + "," + r.y + " " + i.x + "," + i.y + "\"", t.gradient) {
+      var _o = t.boundingBox,
+          _r = ((t.gradient.x1 - _o.x) / _o.width * 100).toFixed(3),
+          _i = ((t.gradient.y1 - _o.y) / _o.height * 100).toFixed(3),
+          s = ((t.gradient.x2 - _o.x) / _o.width * 100).toFixed(3),
+          l = ((t.gradient.y2 - _o.y) / _o.height * 100).toFixed(3);a += "\n\t<linearGradient id=\"gradient-" + e + "\" x1=\"" + _r + "%\" y1=\"" + _i + "%\" x2=\"" + s + "%\" y2=\"" + l + "%\">";var h = t.gradient.colors.length - 1;t.gradient.colors.forEach(function (t, e) {
+        var n = toRGBA(t),
+            o = (e / h * 100).toFixed(3);a += "\n\t\t\t\t\t<stop offset=\"" + o + "%\" stop-color=\"" + n + "\"/>\n\t\t\t\t";
+      }), a += "</linearGradient>", n += " fill=\"url(#gradient-" + e + ")\"", t.strokeWidth > 0 && (n += " stroke=\"url(#gradient-" + e + ")\" stroke-width=\"" + t.strokeWidth + "\" stroke-linejoin=\"" + t.lineJoin + "\"");
+    } else t.fill ? n += " fill=\"" + t.fill + "\"" : n += ' fill="transparent"', t.strokeColor && (n += " stroke=\"" + t.strokeColor + "\" stroke-width=\"" + t.strokeWidth + "\" stroke-linejoin=\"" + t.lineJoin + "\"");n += "/>\n\t";
+  }), a.length && (a += "\n\t\t</defs>");return "<?xml version=\"1.0\" standalone=\"yes\"?>\n<svg width=\"" + e.width + "\" height=\"" + e.height + "\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" >\n\t" + a + "\n\t" + n + "\n</svg>";
+},
+    commonjsGlobal = "undefined" != typeof window ? window : "undefined" != typeof global ? global : "undefined" != typeof self ? self : {},
+    delaunay = createCommonjsModule(function (t) {
+  function e(t, e, a) {
+    this.a = t, this.b = e, this.c = a;var n,
+        o,
+        r,
+        i,
+        s = e.x - t.x,
+        l = e.y - t.y,
+        h = a.x - t.x,
+        g = a.y - t.y,
+        d = s * (t.x + e.x) + l * (t.y + e.y),
+        c = h * (t.x + a.x) + g * (t.y + a.y),
+        u = 2 * (s * (a.y - e.y) - l * (a.x - e.x));Math.abs(u) < 1e-6 ? (n = Math.min(t.x, e.x, a.x), o = Math.min(t.y, e.y, a.y), r = .5 * (Math.max(t.x, e.x, a.x) - n), i = .5 * (Math.max(t.y, e.y, a.y) - o), this.x = n + r, this.y = o + i, this.r = r * r + i * i) : (this.x = (g * d - l * c) / u, this.y = (s * c - h * d) / u, r = this.x - t.x, i = this.y - t.y, this.r = r * r + i * i);
+  }function a(t, e) {
+    return e.x - t.x;
+  }function n(t) {
+    var e,
+        a,
+        n,
+        o,
+        r,
+        i = t.length;t: for (; i;) {
+      for (a = t[--i], e = t[--i], n = i; n;) {
+        if (r = t[--n], o = t[--n], e === o && a === r || e === r && a === o) {
+          t.splice(i, 2), t.splice(n, 2), i -= 2;continue t;
+        }
+      }
+    }
+  }function o(t) {
+    if (t.length < 3) return [];t.sort(a);for (var o = t.length - 1, r = t[o].x, i = t[0].x, s = t[o].y, l = s; o--;) {
+      t[o].y < s && (s = t[o].y), t[o].y > l && (l = t[o].y);
+    }var h,
+        g,
+        d,
+        c = i - r,
+        u = l - s,
+        y = c > u ? c : u,
+        f = .5 * (i + r),
+        p = .5 * (l + s),
+        m = [new e({ x: f - 20 * y, y: p - y, __sentinel: !0 }, { x: f, y: p + 20 * y, __sentinel: !0 }, { x: f + 20 * y, y: p - y, __sentinel: !0 })],
+        x = [],
+        w = [];for (o = t.length; o--;) {
+      for (w.length = 0, h = m.length; h--;) {
+        (c = t[o].x - m[h].x) > 0 && c * c > m[h].r ? (x.push(m[h]), m.splice(h, 1)) : c * c + (u = t[o].y - m[h].y) * u > m[h].r || (w.push(m[h].a, m[h].b, m[h].b, m[h].c, m[h].c, m[h].a), m.splice(h, 1));
+      }for (n(w), h = w.length; h;) {
+        d = w[--h], g = w[--h], m.push(new e(g, d, t[o]));
+      }
+    }for (Array.prototype.push.apply(x, m), o = x.length; o--;) {
+      (x[o].a.__sentinel || x[o].b.__sentinel || x[o].c.__sentinel) && x.splice(o, 1);
+    }return x;
+  }e.prototype.draw = function (t) {
+    t.beginPath(), t.moveTo(this.a.x, this.a.y), t.lineTo(this.b.x, this.b.y), t.lineTo(this.c.x, this.c.y), t.closePath(), t.stroke();
+  }, t.exports = { Triangle: e, triangulate: o };
+}),
+    delaunay_2 = delaunay.triangulate,
+    sobel = createCommonjsModule(function (t, e) {
+  !function (a) {
+    "use strict";
+    function n(t) {
+      function e(t) {
+        return function (e, a, n) {
+          return n = n || 0, t[4 * (r * a + e) + n];
+        };
+      }if (!(this instanceof n)) return new n(t);var a,
+          o,
+          r = t.width,
+          i = t.height,
+          s = [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
+          l = [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
+          h = [],
+          g = [],
+          d = e(t.data);for (o = 0; o < i; o++) {
+        for (a = 0; a < r; a++) {
+          var c = (d(a, o, 0) + d(a, o, 1) + d(a, o, 2)) / 3;g.push(c, c, c, 255);
+        }
+      }for (d = e(g), o = 0; o < i; o++) {
+        for (a = 0; a < r; a++) {
+          var u = s[0][0] * d(a - 1, o - 1) + s[0][1] * d(a, o - 1) + s[0][2] * d(a + 1, o - 1) + s[1][0] * d(a - 1, o) + s[1][1] * d(a, o) + s[1][2] * d(a + 1, o) + s[2][0] * d(a - 1, o + 1) + s[2][1] * d(a, o + 1) + s[2][2] * d(a + 1, o + 1),
+              y = l[0][0] * d(a - 1, o - 1) + l[0][1] * d(a, o - 1) + l[0][2] * d(a + 1, o - 1) + l[1][0] * d(a - 1, o) + l[1][1] * d(a, o) + l[1][2] * d(a + 1, o) + l[2][0] * d(a - 1, o + 1) + l[2][1] * d(a, o + 1) + l[2][2] * d(a + 1, o + 1),
+              f = Math.sqrt(u * u + y * y) >>> 0;h.push(f, f, f, 255);
+        }
+      }var p = h;return "function" == typeof Uint8ClampedArray && (p = new Uint8ClampedArray(h)), p.toImageData = function () {
+        return n.toImageData(p, r, i);
+      }, p;
+    }function o(t, e, a) {
+      return { width: e, height: a, data: t };
+    }n.toImageData = function (t, e, a) {
+      if ("function" == typeof ImageData && "[object Uint16Array]" === Object.prototype.toString.call(t)) return new ImageData(t, e, a);if ("object" == (typeof window === "undefined" ? "undefined" : _typeof(window)) && "object" == _typeof(window.document)) {
+        var n = document.createElement("canvas");if ("function" == typeof n.getContext) {
+          var r = n.getContext("2d").createImageData(e, a);return r.data.set(t), r;
+        }return new o(t, e, a);
+      }return new o(t, e, a);
+    }, t.exports && (e = t.exports = n), e.Sobel = n;
+  }();
+}),
+    isImageData = function isImageData(t) {
+  return t && "number" == typeof t.width && "number" == typeof t.height && t.data && "number" == typeof t.data.length && "object" == _typeof(t.data);
+},
+    copyImageData = function copyImageData(t) {
+  if (isImageData(t)) {
+    if ("undefined" == typeof Uint8ClampedArray) {
+      if ("undefined" == typeof window) throw new Error("Can't copy imageData in webworker without Uint8ClampedArray support.");return copyImageDataWithCanvas(t);
+    }{
+      var e = new Uint8ClampedArray(t.data);if ("undefined" == typeof ImageData) return { width: t.width, height: t.height, data: e };{
+        var a = void 0;try {
+          a = new ImageData(e, t.width, t.height);
+        } catch (e) {
+          if ("undefined" == typeof window) throw new Error("Can't copy imageData in webworker without proper ImageData() support.");a = copyImageDataWithCanvas(t);
+        }return a;
+      }
+    }
+  }throw new Error("Given imageData object is not useable.");
+};var mul_table = [512, 512, 456, 512, 328, 456, 335, 512, 405, 328, 271, 456, 388, 335, 292, 512, 454, 405, 364, 328, 298, 271, 496, 456, 420, 388, 360, 335, 312, 292, 273, 512, 482, 454, 428, 405, 383, 364, 345, 328, 312, 298, 284, 271, 259, 496, 475, 456, 437, 420, 404, 388, 374, 360, 347, 335, 323, 312, 302, 292, 282, 273, 265, 512, 497, 482, 468, 454, 441, 428, 417, 405, 394, 383, 373, 364, 354, 345, 337, 328, 320, 312, 305, 298, 291, 284, 278, 271, 265, 259, 507, 496, 485, 475, 465, 456, 446, 437, 428, 420, 412, 404, 396, 388, 381, 374, 367, 360, 354, 347, 341, 335, 329, 323, 318, 312, 307, 302, 297, 292, 287, 282, 278, 273, 269, 265, 261, 512, 505, 497, 489, 482, 475, 468, 461, 454, 447, 441, 435, 428, 422, 417, 411, 405, 399, 394, 389, 383, 378, 373, 368, 364, 359, 354, 350, 345, 341, 337, 332, 328, 324, 320, 316, 312, 309, 305, 301, 298, 294, 291, 287, 284, 281, 278, 274, 271, 268, 265, 262, 259, 257, 507, 501, 496, 491, 485, 480, 475, 470, 465, 460, 456, 451, 446, 442, 437, 433, 428, 424, 420, 416, 412, 408, 404, 400, 396, 392, 388, 385, 381, 377, 374, 370, 367, 363, 360, 357, 354, 350, 347, 344, 341, 338, 335, 332, 329, 326, 323, 320, 318, 315, 312, 310, 307, 304, 302, 299, 297, 294, 292, 289, 287, 285, 282, 280, 278, 275, 273, 271, 269, 267, 265, 263, 261, 259],
+    shg_table = [9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24];var stackblur = function stackblur(t, e, a, n, o, r) {
+  var i,
+      s,
+      l,
+      h,
+      g,
+      d,
+      c,
+      u,
+      y,
+      f,
+      p,
+      m,
+      x,
+      w,
+      b,
+      C,
+      v,
+      D,
+      k,
+      P,
+      I,
+      B,
+      _,
+      E,
+      S = t.data,
+      W = r + r + 1,
+      M = n - 1,
+      T = o - 1,
+      j = r + 1,
+      G = j * (j + 1) / 2,
+      $ = new BlurStack(),
+      J = $;for (l = 1; l < W; l++) {
+    if (J = J.next = new BlurStack(), l == j) var A = J;
+  }J.next = $;var U = null,
+      L = null;c = d = 0;var O = mul_table[r],
+      V = shg_table[r];for (s = 0; s < o; s++) {
+    for (C = v = D = k = u = y = f = p = 0, m = j * (P = S[d]), x = j * (I = S[d + 1]), w = j * (B = S[d + 2]), b = j * (_ = S[d + 3]), u += G * P, y += G * I, f += G * B, p += G * _, J = $, l = 0; l < j; l++) {
+      J.r = P, J.g = I, J.b = B, J.a = _, J = J.next;
+    }for (l = 1; l < j; l++) {
+      h = d + ((M < l ? M : l) << 2), u += (J.r = P = S[h]) * (E = j - l), y += (J.g = I = S[h + 1]) * E, f += (J.b = B = S[h + 2]) * E, p += (J.a = _ = S[h + 3]) * E, C += P, v += I, D += B, k += _, J = J.next;
+    }for (U = $, L = A, i = 0; i < n; i++) {
+      S[d + 3] = _ = p * O >> V, 0 != _ ? (_ = 255 / _, S[d] = (u * O >> V) * _, S[d + 1] = (y * O >> V) * _, S[d + 2] = (f * O >> V) * _) : S[d] = S[d + 1] = S[d + 2] = 0, u -= m, y -= x, f -= w, p -= b, m -= U.r, x -= U.g, w -= U.b, b -= U.a, h = c + ((h = i + r + 1) < M ? h : M) << 2, u += C += U.r = S[h], y += v += U.g = S[h + 1], f += D += U.b = S[h + 2], p += k += U.a = S[h + 3], U = U.next, m += P = L.r, x += I = L.g, w += B = L.b, b += _ = L.a, C -= P, v -= I, D -= B, k -= _, L = L.next, d += 4;
+    }c += n;
+  }for (i = 0; i < n; i++) {
+    for (v = D = k = C = y = f = p = u = 0, m = j * (P = S[d = i << 2]), x = j * (I = S[d + 1]), w = j * (B = S[d + 2]), b = j * (_ = S[d + 3]), u += G * P, y += G * I, f += G * B, p += G * _, J = $, l = 0; l < j; l++) {
+      J.r = P, J.g = I, J.b = B, J.a = _, J = J.next;
+    }for (g = n, l = 1; l <= r; l++) {
+      d = g + i << 2, u += (J.r = P = S[d]) * (E = j - l), y += (J.g = I = S[d + 1]) * E, f += (J.b = B = S[d + 2]) * E, p += (J.a = _ = S[d + 3]) * E, C += P, v += I, D += B, k += _, J = J.next, l < T && (g += n);
+    }for (d = i, U = $, L = A, s = 0; s < o; s++) {
+      S[(h = d << 2) + 3] = _ = p * O >> V, _ > 0 ? (_ = 255 / _, S[h] = (u * O >> V) * _, S[h + 1] = (y * O >> V) * _, S[h + 2] = (f * O >> V) * _) : S[h] = S[h + 1] = S[h + 2] = 0, u -= m, y -= x, f -= w, p -= b, m -= U.r, x -= U.g, w -= U.b, b -= U.a, h = i + ((h = s + j) < T ? h : T) * n << 2, u += C += U.r = S[h], y += v += U.g = S[h + 1], f += D += U.b = S[h + 2], p += k += U.a = S[h + 3], U = U.next, m += P = L.r, x += I = L.g, w += B = L.b, b += _ = L.a, C -= P, v -= I, D -= B, k -= _, L = L.next, d += n;
+    }
+  }return t;
+},
+    greyscale = function greyscale(t) {
+  var e = t.data.length;var a = void 0;for (var n = 0; n < e; n += 4) {
+    a = .34 * t.data[n] + .5 * t.data[n + 1] + .16 * t.data[n + 2], t.data[n] = a, t.data[n + 1] = a, t.data[n + 2] = a;
+  }return t;
+},
+    getEdgePoints = function getEdgePoints(t, e) {
+  var a = t.width,
+      n = t.height,
+      o = t.data,
+      r = [];var i, s, l, h, g, d, c, u, y;for (s = 0; s < n; s += 2) {
+    for (i = 0; i < a; i += 2) {
+      for (u = y = 0, l = -1; l <= 1; l++) {
+        if (d = s + l, c = d * a, d >= 0 && d < n) for (h = -1; h <= 1; h++) {
+          (g = i + h) >= 0 && g < a && (u += o[g + c << 2], y++);
+        }
+      }y && (u /= y), u > e && r.push({ x: i, y: s });
+    }
+  }return r;
+},
+    getVerticesFromPoints = function getVerticesFromPoints(t, e, a, n, o) {
+  var r = {},
+      i = Math.max(~~(e * (1 - a)), 5),
+      s = Math.round(Math.sqrt(i)),
+      l = ~~(n / s),
+      h = ~~(o / Math.round(Math.ceil(i / s)));var g = 0,
+      d = 0,
+      c = 0,
+      u = 0;for (u = 0; u < o; u += h) {
+    for (c = d = ++g % 2 == 0 ? ~~(l / 2) : 0; c < n; c += l) {
+      c < n && u < o && addVertex(~~(c + Math.cos(u) * h), ~~(u + Math.sin(c) * l), r);
+    }
+  }addVertex(0, 0, r), addVertex(n - 1, 0, r), addVertex(n - 1, o - 1, r), addVertex(0, o - 1, r);var y = e - Object.keys(r).length,
+      f = t.length,
+      p = ~~(f / y);if (e > 0 && p > 0) {
+    var _e = 0;for (_e = 0; _e < f; _e += p) {
+      addVertex(t[_e].x, t[_e].y, r);
+    }
+  }return t = null, Object.keys(r).map(function (t) {
+    return r[t];
+  });
+},
+    getBoundingBox = function getBoundingBox(t) {
+  var e = 1 / 0,
+      a = -1 / 0,
+      n = 1 / 0,
+      o = -1 / 0;return t.forEach(function (t) {
+    t.x < e && (e = t.x), t.y < n && (n = t.y), t.x > a && (a = t.x), t.y > o && (o = t.y);
+  }), { x: e, y: n, width: a - e, height: o - n };
+},
+    addBoundingBoxesToPolygons = function addBoundingBoxesToPolygons(t, e, a) {
+  return t.forEach(function (t) {
+    t.boundingBox = getBoundingBox([t.a, t.b, t.c]);
+  }), t.filter(function (t) {
+    return t.boundingBox.width > 0 && t.boundingBox.height > 0;
+  });
+},
+    getColorByPos = function getColorByPos(t, e, a) {
+  var n = (0 | clamp(t.x, 1, e.width - 2)) + (0 | clamp(t.y, 1, e.height - 2)) * e.width << 2;n >= e.data.length && (n = e.data.length - 5);var o = e.data[n + 3] / 255;return a && 0 === o ? a : { r: e.data[n], g: e.data[n + 1], b: e.data[n + 2], a: o };
+},
+    polygonCenter = function polygonCenter(t) {
+  return { x: .33333 * (t.a.x + t.b.x + t.c.x), y: .33333 * (t.a.y + t.b.y + t.c.y) };
+},
+    isTransparent = function isTransparent(t) {
+  return 0 === t.a;
+},
+    addColorToPolygons = function addColorToPolygons(t, e, a) {
+  var n = a.fill,
+      o = a.stroke,
+      r = a.strokeWidth,
+      i = a.lineJoin,
+      s = a.transparentColor,
+      l = "string" == typeof n && n,
+      h = "string" == typeof o && o,
+      g = function g(t, e) {
+    var a = isTransparent(t) && s;return e && !a ? e : toRGBA(a ? s : t);
+  };
+
+  return t.forEach(function (t) {
+    var a = getColorByPos(polygonCenter(t), e);n && (t.fill = g(a, l)), o && (t.strokeColor = g(a, h), t.strokeWidth = r, t.lineJoin = i);
+  }), t;
+},
+    luminance = function luminance(t) {
+  var e = [t.r, t.g, t.b].map(function (t) {
+    return (t /= 255) <= .03928 ? t / 12.92 : Math.pow((t + .055) / 1.055, 2.4);
+  });return .2126 * e[0] + .7152 * e[1] + .0722 * e[2];
+},
+    distance = function distance(t, e) {
+  var a = e.x - t.x,
+      n = e.y - t.y;return Math.sqrt(a * a + n * n);
+},
+    addGradientsToPolygons = function addGradientsToPolygons(t, e, a) {
+  return t.forEach(function (t) {
+    var n = {};"abc".split("").forEach(function (o) {
+      var r = getColorByPos(t[o], e, a.transparentColor);n[o] = { key: o, color: r, x: t[o].x, y: t[o].y }, n[o].luminance = luminance(n[o].color);var i = "abc".replace(o, "").split("");n[o].median = { x: (t[i[0]].x + t[i[1]].x) / 2, y: (t[i[0]].y + t[i[1]].y) / 2 }, n[o].medianColor = getColorByPos(n[o].median, e, a.transparentColor), n[o].medianLuminance = luminance(n[o].medianColor);
+    });var o = [n.a, n.b, n.c].sort(function (t, e) {
+      return Math.abs(t.luminance - t.medianLuminance) - Math.abs(e.luminance - e.medianLuminance);
+    }),
+        r = o[0],
+        i = o[0],
+        s = r.median,
+        l = [i],
+        h = distance(i, s);for (var _t = 1, _e2 = a.gradientStops - 2; _t < _e2; _t++) {
+      var _e3 = _t * (h / a.gradientStops) / h,
+          _n = { x: i.x + _e3 * (s.x - i.x), y: i.y + _e3 * (s.y - i.y) };l.push(_n);
+    }l.push(s), t.gradient = { x1: r.x, y1: r.y, x2: r.median.x, y2: r.median.y, colors: l.map(function (t) {
+        return getColorByPos(t, e, a.transparentColor);
+      }) }, a.stroke && (t.strokeWidth = a.strokeWidth, t.lineJoin = a.lineJoin), n = null;
+  }), t;
+},
+    filterTransparentPolygons = function filterTransparentPolygons(t, e) {
+  return t.filter(function (t) {
+    var a = getColorByPos(polygonCenter(t), e);return !isTransparent(a);
+  });
+},
+    imageDataToPolygons = function imageDataToPolygons(t, e) {
+  if (isImageData(t)) {
+    var a = { width: t.width, height: t.height },
+        n = copyImageData(t),
+        o = copyImageData(t),
+        r = stackblur(n, 0, 0, a.width, a.height, e.blur),
+        i = greyscale(r),
+        s = sobel(i).toImageData(),
+        l = getEdgePoints(s, e.threshold),
+        h = getVerticesFromPoints(l, e.vertexCount, e.accuracy, a.width, a.height);var g = delaunay_2(h);return g = addBoundingBoxesToPolygons(g), e.transparentColor || (g = filterTransparentPolygons(g, o)), g = !0 === e.fill && !0 === e.gradients ? addGradientsToPolygons(g, o, e) : addColorToPolygons(g, o, e);
+  }throw new Error("Can't work with the imageData provided. It seems to be corrupt.");
+},
+    browser = function browser(t) {
+  function e() {
+    var t = objectAssign({}, c);return g || objectAssign(t, u), t;
+  }function a() {
+    var t = objectAssign({}, c);return d || objectAssign(t, y), t;
+  }function n(t, e, n) {
+    return s = !!n, g = function g() {
+      return s ? t(e) : new Promise(function (a, n) {
+        try {
+          a(t(e));
+        } catch (t) {
+          n(t);
+        }
+      });
+    }, r() ? i() : a();
+  }function o(t, a, n) {
+    return l = !!n, d = function d(e, n) {
+      return l ? t(e, n, a) : new Promise(function (o, r) {
+        try {
+          o(t(e, n, a));
+        } catch (t) {
+          r(t);
+        }
+      });
+    }, r() ? i() : e();
+  }function r() {
+    return g && d;
+  }function i() {
+    if (s && l) {
+      var _e4 = g(t),
+          _a2 = imageDataToPolygons(_e4, t);return d(_a2, _e4);
+    }return new Promise(function (e, a) {
+      var n = void 0;(function (t) {
+        return new Promise(function (e, a) {
+          if (s) try {
+            var _n2 = g(t);e(_n2);
+          } catch (t) {
+            a(t);
+          } else g(t).then(e, a);
+        });
+      })().then(function (e) {
+        return n = e, function (t, e) {
+          return new Promise(function (a, n) {
+            h.addEventListener("message", function (t) {
+              if (t.data && t.data.polygonJSONStr) {
+                var _e5 = JSON.parse(t.data.polygonJSONStr);a(_e5);
+              } else n(t.data && t.data.err ? t.data.err : t);
+            }), h.postMessage({ params: e, imageData: t, imageDataWidth: t.width, imageDataHeight: t.height });
+          });
+        }(n, t);
+      }, a).then(function (t) {
+        return function (t, e) {
+          return new Promise(function (a, n) {
+            if (l) try {
+              var _o2 = d(t, e);a(_o2);
+            } catch (t) {
+              n(t);
+            } else d(t, e).then(a, n);
+          });
+        }(t, n);
+      }, a).then(function (t) {
+        e(t);
+      }, a);
+    });
+  }t = sanitizeInput(t);var s = !1,
+      l = !1;var h = new Worker(URL.createObjectURL(new Blob(['function createCommonjsModule(t,e){return e={exports:{}},t(e,e.exports),e.exports}function copyImageDataWithCanvas(t){const e=new Canvas$1(t.width,t.height).getContext("2d");return e.putImageData(t,0,0),e.getImageData(0,0,t.width,t.height)}function BlurStack(){this.r=0,this.g=0,this.b=0,this.a=0,this.next=null}function addVertex(t,e,a){let n=t+"|"+e;a[n]||(a[n]={x:t,y:e}),n=null}var commonjsGlobal="undefined"!=typeof window?window:"undefined"!=typeof global?global:"undefined"!=typeof self?self:{},delaunay=createCommonjsModule(function(t){function e(t,e,a){this.a=t,this.b=e,this.c=a;var n,o,r,i,s=e.x-t.x,h=e.y-t.y,l=a.x-t.x,d=a.y-t.y,g=s*(t.x+e.x)+h*(t.y+e.y),c=l*(t.x+a.x)+d*(t.y+a.y),u=2*(s*(a.y-e.y)-h*(a.x-e.x));Math.abs(u)<1e-6?(n=Math.min(t.x,e.x,a.x),o=Math.min(t.y,e.y,a.y),r=.5*(Math.max(t.x,e.x,a.x)-n),i=.5*(Math.max(t.y,e.y,a.y)-o),this.x=n+r,this.y=o+i,this.r=r*r+i*i):(this.x=(d*g-h*c)/u,this.y=(s*c-l*g)/u,r=this.x-t.x,i=this.y-t.y,this.r=r*r+i*i)}function a(t,e){return e.x-t.x}function n(t){var e,a,n,o,r,i=t.length;t:for(;i;)for(a=t[--i],e=t[--i],n=i;n;)if(r=t[--n],o=t[--n],e===o&&a===r||e===r&&a===o){t.splice(i,2),t.splice(n,2),i-=2;continue t}}function o(t){if(t.length<3)return[];t.sort(a);for(var o=t.length-1,r=t[o].x,i=t[0].x,s=t[o].y,h=s;o--;)t[o].y<s&&(s=t[o].y),t[o].y>h&&(h=t[o].y);var l,d,g,c=i-r,u=h-s,y=c>u?c:u,f=.5*(i+r),p=.5*(h+s),m=[new e({x:f-20*y,y:p-y,__sentinel:!0},{x:f,y:p+20*y,__sentinel:!0},{x:f+20*y,y:p-y,__sentinel:!0})],x=[],w=[];for(o=t.length;o--;){for(w.length=0,l=m.length;l--;)(c=t[o].x-m[l].x)>0&&c*c>m[l].r?(x.push(m[l]),m.splice(l,1)):c*c+(u=t[o].y-m[l].y)*u>m[l].r||(w.push(m[l].a,m[l].b,m[l].b,m[l].c,m[l].c,m[l].a),m.splice(l,1));for(n(w),l=w.length;l;)g=w[--l],d=w[--l],m.push(new e(d,g,t[o]))}for(Array.prototype.push.apply(x,m),o=x.length;o--;)(x[o].a.__sentinel||x[o].b.__sentinel||x[o].c.__sentinel)&&x.splice(o,1);return x}e.prototype.draw=function(t){t.beginPath(),t.moveTo(this.a.x,this.a.y),t.lineTo(this.b.x,this.b.y),t.lineTo(this.c.x,this.c.y),t.closePath(),t.stroke()},t.exports={Triangle:e,triangulate:o}}),delaunay_2=delaunay.triangulate,sobel=createCommonjsModule(function(t,e){!function(a){"use strict";function n(t){function e(t){return function(e,a,n){return n=n||0,t[4*(r*a+e)+n]}}if(!(this instanceof n))return new n(t);var a,o,r=t.width,i=t.height,s=[[-1,0,1],[-2,0,2],[-1,0,1]],h=[[-1,-2,-1],[0,0,0],[1,2,1]],l=[],d=[],g=e(t.data);for(o=0;o<i;o++)for(a=0;a<r;a++){var c=(g(a,o,0)+g(a,o,1)+g(a,o,2))/3;d.push(c,c,c,255)}for(g=e(d),o=0;o<i;o++)for(a=0;a<r;a++){var u=s[0][0]*g(a-1,o-1)+s[0][1]*g(a,o-1)+s[0][2]*g(a+1,o-1)+s[1][0]*g(a-1,o)+s[1][1]*g(a,o)+s[1][2]*g(a+1,o)+s[2][0]*g(a-1,o+1)+s[2][1]*g(a,o+1)+s[2][2]*g(a+1,o+1),y=h[0][0]*g(a-1,o-1)+h[0][1]*g(a,o-1)+h[0][2]*g(a+1,o-1)+h[1][0]*g(a-1,o)+h[1][1]*g(a,o)+h[1][2]*g(a+1,o)+h[2][0]*g(a-1,o+1)+h[2][1]*g(a,o+1)+h[2][2]*g(a+1,o+1),f=Math.sqrt(u*u+y*y)>>>0;l.push(f,f,f,255)}var p=l;return"function"==typeof Uint8ClampedArray&&(p=new Uint8ClampedArray(l)),p.toImageData=function(){return n.toImageData(p,r,i)},p}function o(t,e,a){return{width:e,height:a,data:t}}n.toImageData=function(t,e,a){if("function"==typeof ImageData&&"[object Uint16Array]"===Object.prototype.toString.call(t))return new ImageData(t,e,a);if("object"==typeof window&&"object"==typeof window.document){var n=document.createElement("canvas");if("function"==typeof n.getContext){var r=n.getContext("2d").createImageData(e,a);return r.data.set(t),r}return new o(t,e,a)}return new o(t,e,a)},t.exports&&(e=t.exports=n),e.Sobel=n}()}),isImageData=t=>t&&"number"==typeof t.width&&"number"==typeof t.height&&t.data&&"number"==typeof t.data.length&&"object"==typeof t.data;class Canvas$1{constructor(t=300,e=150){"undefined"==typeof window?(this.canvasEl={width:t,height:e},this.ctx=null):(this.canvasEl=document.createElement("canvas"),this.canvasEl.width=t,this.canvasEl.height=e,this.ctx=this.canvasEl.getContext("2d"))}getContext(){return this.ctx}toDataURL(t,e,a){if("function"!=typeof a)return this.canvasEl.toDataURL(t,e);a(this.canvasEl.toDataURL(t,e))}get width(){return this.canvasEl.width}set width(t){this.canvasEl.width=t}get height(){return this.canvasEl.height}set height(t){this.canvasEl.height=t}}"undefined"!=typeof window&&(Canvas$1.Image=Image);var copyImageData=t=>{if(isImageData(t)){if("undefined"==typeof Uint8ClampedArray){if("undefined"==typeof window)throw new Error("Can\'t copy imageData in webworker without Uint8ClampedArray support.");return copyImageDataWithCanvas(t)}{const e=new Uint8ClampedArray(t.data);if("undefined"==typeof ImageData)return{width:t.width,height:t.height,data:e};{let a;try{a=new ImageData(e,t.width,t.height)}catch(e){if("undefined"==typeof window)throw new Error("Can\'t copy imageData in webworker without proper ImageData() support.");a=copyImageDataWithCanvas(t)}return a}}}throw new Error("Given imageData object is not useable.")};const mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,289,287,285,282,280,278,275,273,271,269,267,265,263,261,259],shg_table=[9,11,12,13,13,14,14,15,15,15,15,16,16,16,16,17,17,17,17,17,17,17,18,18,18,18,18,18,18,18,18,19,19,19,19,19,19,19,19,19,19,19,19,19,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24];var stackblur=(t,e,a,n,o,r)=>{var i,s,h,l,d,g,c,u,y,f,p,m,x,w,b,v,C,D,I,E,M,P,B,k,_=t.data,T=r+r+1,j=n-1,A=o-1,S=r+1,U=S*(S+1)/2,V=new BlurStack,W=V;for(h=1;h<T;h++)if(W=W.next=new BlurStack,h==S)var $=W;W.next=V;var G=null,J=null;c=g=0;var L=mul_table[r],O=shg_table[r];for(s=0;s<o;s++){for(v=C=D=I=u=y=f=p=0,m=S*(E=_[g]),x=S*(M=_[g+1]),w=S*(P=_[g+2]),b=S*(B=_[g+3]),u+=U*E,y+=U*M,f+=U*P,p+=U*B,W=V,h=0;h<S;h++)W.r=E,W.g=M,W.b=P,W.a=B,W=W.next;for(h=1;h<S;h++)l=g+((j<h?j:h)<<2),u+=(W.r=E=_[l])*(k=S-h),y+=(W.g=M=_[l+1])*k,f+=(W.b=P=_[l+2])*k,p+=(W.a=B=_[l+3])*k,v+=E,C+=M,D+=P,I+=B,W=W.next;for(G=V,J=$,i=0;i<n;i++)_[g+3]=B=p*L>>O,0!=B?(B=255/B,_[g]=(u*L>>O)*B,_[g+1]=(y*L>>O)*B,_[g+2]=(f*L>>O)*B):_[g]=_[g+1]=_[g+2]=0,u-=m,y-=x,f-=w,p-=b,m-=G.r,x-=G.g,w-=G.b,b-=G.a,l=c+((l=i+r+1)<j?l:j)<<2,u+=v+=G.r=_[l],y+=C+=G.g=_[l+1],f+=D+=G.b=_[l+2],p+=I+=G.a=_[l+3],G=G.next,m+=E=J.r,x+=M=J.g,w+=P=J.b,b+=B=J.a,v-=E,C-=M,D-=P,I-=B,J=J.next,g+=4;c+=n}for(i=0;i<n;i++){for(C=D=I=v=y=f=p=u=0,m=S*(E=_[g=i<<2]),x=S*(M=_[g+1]),w=S*(P=_[g+2]),b=S*(B=_[g+3]),u+=U*E,y+=U*M,f+=U*P,p+=U*B,W=V,h=0;h<S;h++)W.r=E,W.g=M,W.b=P,W.a=B,W=W.next;for(d=n,h=1;h<=r;h++)g=d+i<<2,u+=(W.r=E=_[g])*(k=S-h),y+=(W.g=M=_[g+1])*k,f+=(W.b=P=_[g+2])*k,p+=(W.a=B=_[g+3])*k,v+=E,C+=M,D+=P,I+=B,W=W.next,h<A&&(d+=n);for(g=i,G=V,J=$,s=0;s<o;s++)_[(l=g<<2)+3]=B=p*L>>O,B>0?(B=255/B,_[l]=(u*L>>O)*B,_[l+1]=(y*L>>O)*B,_[l+2]=(f*L>>O)*B):_[l]=_[l+1]=_[l+2]=0,u-=m,y-=x,f-=w,p-=b,m-=G.r,x-=G.g,w-=G.b,b-=G.a,l=i+((l=s+S)<A?l:A)*n<<2,u+=v+=G.r=_[l],y+=C+=G.g=_[l+1],f+=D+=G.b=_[l+2],p+=I+=G.a=_[l+3],G=G.next,m+=E=J.r,x+=M=J.g,w+=P=J.b,b+=B=J.a,v-=E,C-=M,D-=P,I-=B,J=J.next,g+=n}return t},greyscale=t=>{const e=t.data.length;let a;for(let n=0;n<e;n+=4)a=.34*t.data[n]+.5*t.data[n+1]+.16*t.data[n+2],t.data[n]=a,t.data[n+1]=a,t.data[n+2]=a;return t},getEdgePoints=(t,e)=>{const a=t.width,n=t.height,o=t.data,r=[];var i,s,h,l,d,g,c,u,y;for(s=0;s<n;s+=2)for(i=0;i<a;i+=2){for(u=y=0,h=-1;h<=1;h++)if(g=s+h,c=g*a,g>=0&&g<n)for(l=-1;l<=1;l++)(d=i+l)>=0&&d<a&&(u+=o[d+c<<2],y++);y&&(u/=y),u>e&&r.push({x:i,y:s})}return r},clamp=(t,e,a)=>t<e?e:t>a?a:t,getVerticesFromPoints=(t,e,a,n,o)=>{const r={},i=Math.max(~~(e*(1-a)),5),s=Math.round(Math.sqrt(i)),h=~~(n/s),l=~~(o/Math.round(Math.ceil(i/s)));let d=0,g=0,c=0,u=0;for(u=0;u<o;u+=l)for(c=g=++d%2==0?~~(h/2):0;c<n;c+=h)c<n&&u<o&&addVertex(~~(c+Math.cos(u)*l),~~(u+Math.sin(c)*h),r);addVertex(0,0,r),addVertex(n-1,0,r),addVertex(n-1,o-1,r),addVertex(0,o-1,r);const y=e-Object.keys(r).length,f=t.length,p=~~(f/y);if(e>0&&p>0){let e=0;for(e=0;e<f;e+=p)addVertex(t[e].x,t[e].y,r)}return t=null,Object.keys(r).map(t=>r[t])},getBoundingBox=t=>{let e=1/0,a=-1/0,n=1/0,o=-1/0;return t.forEach(t=>{t.x<e&&(e=t.x),t.y<n&&(n=t.y),t.x>a&&(a=t.x),t.y>o&&(o=t.y)}),{x:e,y:n,width:a-e,height:o-n}},addBoundingBoxesToPolygons=(t,e,a)=>(t.forEach(t=>{t.boundingBox=getBoundingBox([t.a,t.b,t.c])}),t.filter(t=>t.boundingBox.width>0&&t.boundingBox.height>0)),getColorByPos=(t,e,a)=>{let n=(0|clamp(t.x,1,e.width-2))+(0|clamp(t.y,1,e.height-2))*e.width<<2;n>=e.data.length&&(n=e.data.length-5);const o=e.data[n+3]/255;return a&&0===o?a:{r:e.data[n],g:e.data[n+1],b:e.data[n+2],a:o}},polygonCenter=t=>({x:.33333*(t.a.x+t.b.x+t.c.x),y:.33333*(t.a.y+t.b.y+t.c.y)}),isTransparent=t=>0===t.a;const objectAssign=Object.assign;var toRGBA=t=>{const e=objectAssign({a:1},t);return`rgba(${e.r}, ${e.g}, ${e.b}, ${e.a})`},addColorToPolygons=function(t,e,a){const{fill:n,stroke:o,strokeWidth:r,lineJoin:i,transparentColor:s}=a,h="string"==typeof n&&n,l="string"==typeof o&&o,d=(t,e)=>{const a=isTransparent(t)&&s;return e&&!a?e:toRGBA(a?s:t)};return t.forEach(t=>{const a=getColorByPos(polygonCenter(t),e);n&&(t.fill=d(a,h)),o&&(t.strokeColor=d(a,l),t.strokeWidth=r,t.lineJoin=i)}),t},luminance=t=>{const e=[t.r,t.g,t.b].map(t=>(t/=255)<=.03928?t/12.92:Math.pow((t+.055)/1.055,2.4));return.2126*e[0]+.7152*e[1]+.0722*e[2]},distance=(t,e)=>{let a=e.x-t.x,n=e.y-t.y;return Math.sqrt(a*a+n*n)},addGradientsToPolygons=function(t,e,a){return t.forEach(t=>{let n={};"abc".split("").forEach(o=>{const r=getColorByPos(t[o],e,a.transparentColor);n[o]={key:o,color:r,x:t[o].x,y:t[o].y},n[o].luminance=luminance(n[o].color);const i="abc".replace(o,"").split("");n[o].median={x:(t[i[0]].x+t[i[1]].x)/2,y:(t[i[0]].y+t[i[1]].y)/2},n[o].medianColor=getColorByPos(n[o].median,e,a.transparentColor),n[o].medianLuminance=luminance(n[o].medianColor)});const o=[n.a,n.b,n.c].sort((t,e)=>Math.abs(t.luminance-t.medianLuminance)-Math.abs(e.luminance-e.medianLuminance)),r=o[0],i=o[0],s=r.median,h=[i],l=distance(i,s);for(let t=1,e=a.gradientStops-2;t<e;t++){const e=t*(l/a.gradientStops)/l,n={x:i.x+e*(s.x-i.x),y:i.y+e*(s.y-i.y)};h.push(n)}h.push(s),t.gradient={x1:r.x,y1:r.y,x2:r.median.x,y2:r.median.y,colors:h.map(t=>getColorByPos(t,e,a.transparentColor))},a.stroke&&(t.strokeWidth=a.strokeWidth,t.lineJoin=a.lineJoin),n=null}),t},filterTransparentPolygons=(t,e)=>t.filter(t=>{const a=getColorByPos(polygonCenter(t),e);return!isTransparent(a)}),imageDataToPolygons=(t,e)=>{if(isImageData(t)){const a={width:t.width,height:t.height},n=copyImageData(t),o=copyImageData(t),r=stackblur(n,0,0,a.width,a.height,e.blur),i=greyscale(r),s=sobel(i).toImageData(),h=getEdgePoints(s,e.threshold),l=getVerticesFromPoints(h,e.vertexCount,e.accuracy,a.width,a.height);let d=delaunay_2(l);return d=addBoundingBoxesToPolygons(d),e.transparentColor||(d=filterTransparentPolygons(d,o)),d=!0===e.fill&&!0===e.gradients?addGradientsToPolygons(d,o,e):addColorToPolygons(d,o,e)}throw new Error("Can\'t work with the imageData provided. It seems to be corrupt.")};onmessage=(t=>{if(t.data.imageData&&t.data.params)try{let e=t.data.imageData;void 0===e.width&&"number"==typeof t.data.imageDataWidth&&(e.width=t.data.imageDataWidth),void 0===e.height&&"number"==typeof t.data.imageDataHeight&&(e.height=t.data.imageDataHeight);const a=imageDataToPolygons(t.data.imageData,t.data.params);self.postMessage({polygonJSONStr:JSON.stringify(a)})}catch(t){self.postMessage({err:t.message||t})}else t.data.imageData?self.postMessage({err:"Parameters are missing."}):self.postMessage({err:"ImageData is missing."});self.close()});'], { type: "text/javascript" })));var g = void 0,
+      d = void 0;var c = { getParams: function getParams() {
+      return t;
+    }, getInput: e, getOutput: a },
+      u = { fromImage: function fromImage(t) {
+      return n(fromImageToImageData, t);
+    }, fromImageSync: function fromImageSync(t) {
+      return n(fromImageToImageData, t, !0);
+    }, fromImageData: function fromImageData(t) {
+      return n(function (t) {
+        return t;
+      }, t);
+    }, fromImageDataSync: function fromImageDataSync(t) {
+      return n(function (t) {
+        return t;
+      }, t, !0);
+    } },
+      y = { toData: function toData(t) {
+      return o(function (t) {
+        return t;
+      }, t);
+    }, toDataSync: function toDataSync(t) {
+      return o(function (t) {
+        return t;
+      }, t, !0);
+    }, toDataURL: function toDataURL(t) {
+      return o(polygonsToDataURL, t);
+    }, toDataURLSync: function toDataURLSync(t) {
+      return o(polygonsToDataURL, t, !0);
+    }, toImageData: function toImageData(t) {
+      return o(polygonsToImageData, t);
+    }, toImageDataSync: function toImageDataSync(t) {
+      return o(polygonsToImageData, t, !0);
+    }, toSVG: function toSVG(t) {
+      return o(polygonsToSVG, t);
+    }, toSVGSync: function toSVGSync(t) {
+      return o(polygonsToSVG, t, !0);
+    } };return e();
+};exports.default = browser;
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(8)))
+
+/***/ }),
+/* 8 */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
+
+/***/ }),
 /* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2567,6 +2541,7 @@ var ImgurGallery = function () {
     this.album = 'GOHHC';
     this.albumUploadReference = 'sK95kmHqbqE7HQd';
 
+    this.buildMenu();
     this.fetchAlbumDataAndRedrawGallery();
   }
 
@@ -2612,6 +2587,7 @@ var ImgurGallery = function () {
       var svg = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
       var url = DOMURL.createObjectURL(svg);
 
+      // Draw the SVG into an hidden canvas and convert it to a png
       img.onload = function () {
         ctx.drawImage(img, 0, 0);
         DOMURL.revokeObjectURL(url);
@@ -2620,50 +2596,10 @@ var ImgurGallery = function () {
       img.src = url;
     }
   }, {
-    key: 'uploadToImgur',
-    value: function uploadToImgur(dataurl) {
-      var _this3 = this;
-
-      // Create Data Blob
-      var arr = dataurl.split(','),
-          mime = arr[0].match(/:(.*?);/)[1],
-          bstr = atob(arr[1]),
-          n = bstr.length,
-          u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      var dataBlob = new Blob([u8arr], { type: mime });
-
-      // Build FormData to upload Image to Imgur
-      var formData = new FormData();
-      formData.append("type", "file");
-      formData.append("image", dataBlob);
-      formData.append("name", "VectorPicasoTest");
-      formData.append("album", this.albumUploadReference);
-
-      // Request Settings
-      var settings = {
-        async: false,
-        mode: 'cors',
-        method: 'POST',
-        headers: {
-          Authorization: 'Client-ID ' + this.imgurAplicationId,
-          Accept: 'application/json'
-        },
-        mimeType: 'multipart/form-data',
-        body: formData
-      };
-
-      // Upload Image to Imgur
-      fetch(this.apiUrlImage, settings).then(function (response) {
-        _this3.setUploadButtonStatus('done');
-        // fetch new Gallery Data
-        _this3.fetchAlbumDataAndRedrawGallery();
-      });
-    }
-  }, {
     key: 'redrawGallery',
+
+
+    // Ugly and long function to draw the right Gallery
     value: function redrawGallery() {
       var body = document.querySelector('body');
       var imgurGallery = document.querySelector('#imgurGallery');
@@ -2685,31 +2621,59 @@ var ImgurGallery = function () {
       imgurGallery.appendChild(element);
 
       for (var i = 0; i < this.images.length && i < 4; i += 1) {
+        var link = document.createElement('a');
+        link.setAttribute('href', this.images[this.images.length - (1 + i)].link);
+        link.setAttribute('target', '_blank');
+        imgurGallery.appendChild(link);
         element = document.createElement('img');
         element.setAttribute('src', this.images[this.images.length - (1 + i)].link);
-        imgurGallery.appendChild(element);
+        link.appendChild(element);
+
+        if (this.images[this.images.length - (1 + i)].title && this.images[this.images.length - (1 + i)].title !== '') {
+          element = document.createElement('span');
+          element.setAttribute('class', 'image-title');
+          element.innerText = this.images[this.images.length - (1 + i)].title;
+          link.appendChild(element);
+        }
       }
     }
 
-    // Ugly and long code to create the Menu
+    // Ugly and long Menu Logic
 
   }, {
     key: 'buildMenu',
     value: function buildMenu() {
-      var _this4 = this;
+      var _this3 = this;
 
       var menu = document.querySelector('#menu');
       var myMenu = document.createElement('div');
       myMenu.id = 'imgurMenu';
       menu.insertBefore(myMenu, menu.childNodes[0]);
 
-      var element = document.createElement('a');
+      var element = document.createElement('h5');
+      element.id = 'titleLabel';
+      element.innerText = 'Artwork Title (optional): ';
+      element.style.display = 'none';
+      myMenu.appendChild(element);
+      element = document.createElement('br');
+      myMenu.appendChild(element);
+      element = document.createElement('input');
+      element.id = 'titleInput';
+      element.setAttribute('type', 'text');
+      element.setAttribute('name', 'title');
+      element.style.display = 'none';
+      this.title = element;
+      myMenu.appendChild(element);
+      element = document.createElement('br');
+      myMenu.appendChild(element);
+
+      element = document.createElement('a');
       element.id = 'uploadButton';
       element.setAttribute('href', '#');
       element.innerText = 'upload to imgur';
       element.style.display = 'none';
       element.addEventListener('click', function () {
-        _this4.buildPngAndUpload();
+        _this3.buildPngAndUpload();
       });
       myMenu.appendChild(element);
 
@@ -2719,9 +2683,57 @@ var ImgurGallery = function () {
       element.style.display = 'initial';
       myMenu.appendChild(element);
     }
+
+    // indicates the current upload State
+
+  }], [{
+    key: 'uploadToImgur',
+    value: function uploadToImgur(dataurl) {
+      var _this4 = this;
+
+      // Create Data Blob
+      var arr = dataurl.split(',');
+      var mime = arr[0].match(/:(.*?);/)[1];
+      var bstr = atob(arr[1]);
+      var n = bstr.length;
+      var u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      var dataBlob = new Blob([u8arr], { type: mime });
+
+      // Build FormData to upload Image to Imgur
+      var formData = new FormData();
+      formData.append('type', 'file');
+      formData.append('image', dataBlob);
+      formData.append('title', this.title.value || '');
+      formData.append('album', this.albumUploadReference);
+
+      // Request Settings
+      var settings = {
+        async: false,
+        mode: 'cors',
+        method: 'POST',
+        headers: {
+          Authorization: 'Client-ID ' + this.imgurAplicationId,
+          Accept: 'application/json'
+        },
+        mimeType: 'multipart/form-data',
+        body: formData
+      };
+
+      // Upload Image to Imgur
+      fetch(this.apiUrlImage, settings).then(function () {
+        ImgurGallery.setUploadButtonStatus('done');
+        // fetch new Gallery Data
+        _this4.fetchAlbumDataAndRedrawGallery();
+      });
+    }
   }, {
     key: 'setUploadButtonStatus',
     value: function setUploadButtonStatus(status) {
+      var titleLabel = document.querySelector('#titleLabel');
+      var titleInput = document.querySelector('#titleInput');
       var uploadButton = document.querySelector('#uploadButton');
       var infoText = document.querySelector('#uploadingInfo');
 
@@ -2729,21 +2741,29 @@ var ImgurGallery = function () {
         case 'ready':
           uploadButton.style.display = 'block';
           infoText.style.display = 'none';
+          titleLabel.style.display = 'initial';
+          titleInput.style.display = 'initial';
           break;
         case 'loading':
           uploadButton.style.display = 'none';
           infoText.innerText = '...uploading';
           infoText.style.display = 'initial';
+          titleLabel.style.display = 'none';
+          titleInput.style.display = 'none';
           break;
         case 'done':
           uploadButton.style.display = 'none';
           infoText.innerText = 'Upload Succesfull';
           infoText.style.display = 'initial';
+          titleLabel.style.display = 'none';
+          titleInput.style.display = 'none';
           break;
-        case 'error':
+        default:
           uploadButton.style.display = 'none';
           infoText.innerText = 'Uppss...';
           infoText.style.display = 'initial';
+          titleLabel.style.display = 'none';
+          titleInput.style.display = 'none';
           break;
       }
     }

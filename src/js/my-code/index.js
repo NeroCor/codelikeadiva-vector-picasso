@@ -19,7 +19,7 @@ class Artwork {
     // clear SVG
     this.clearSVG();
 
-    // redraw if new SrcImage
+    // redraw if new source Image is selected
     this.srcImage.onload = () => this.draw();
   }
 

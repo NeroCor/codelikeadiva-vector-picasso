@@ -36,13 +36,17 @@ class NailsAndStringDrawer {
   }
 
 
+  // render logic inspired by Bezier Curves 
+  // https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Quadratic_curves
   generateLines(triangle) {
     // Get Triangle Corners
+    // Vector A, B, C
     const a = new Victor(triangle.a.x, triangle.a.y);
     const b = new Victor(triangle.b.x, triangle.b.y);
     const c = new Victor(triangle.c.x, triangle.c.y);
 
     // Get subvectors between corners dependent on the given Line Count
+    // e.g. ABStep = (B - A)/numberOfLines
     const abStepSice = (new Victor(b.x, b.y)
       .subtract(a))
       .divide(new Victor(this.numLines, this.numLines));
@@ -56,6 +60,7 @@ class NailsAndStringDrawer {
     let lines = [];
 
     // Generate Lines between Triangle Edges
+    // e.g. abiLine((A + (ABStep * i), (B + (BCStep * i))
     for (let i = 0; i <= this.numLines; i += 1) {
       lines = [
         ...lines,
